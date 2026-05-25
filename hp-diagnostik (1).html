@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#FF6B6B">
+<title>CekHP — Diagnostik Smartphone Instan</title>
+<link rel="manifest" href="#" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS — Claymorphism System
+═══════════════════════════════════════════════ */
+:root {
+  --clay-red:    #FF6B6B;
+  --clay-orange: #FF9F43;
+  --clay-yellow: #FECA57;
+  --clay-green:  #1DD1A1;
+  --clay-teal:   #00D2D3;
+  --clay-blue:   #54A0FF;
+  --clay-purple: #A29BFE;
+  --clay-pink:   #FD79A8;
+
+  --bg-page:     #F0EEF9;
+  --bg-surface:  #FFFFFF;
+  --text-dark:   #2D1B69;
+  --text-muted:  #7C7097;
+  --text-light:  #B2A8CC;
+
+  /* Claymorphism core shadows */
+  --clay-shadow:
+    4px 4px 0px rgba(45,27,105,0.12),
+    8px 8px 0px rgba(45,27,105,0.06),
+    0 12px 32px rgba(45,27,105,0.10);
+  --clay-shadow-lg:
+    6px 6px 0px rgba(45,27,105,0.14),
+    12px 12px 0px rgba(45,27,105,0.07),
+    0 20px 48px rgba(45,27,105,0.12);
+  --clay-shadow-sm:
+    2px 2px 0px rgba(45,27,105,0.10),
+    4px 4px 0px rgba(45,27,105,0.05),
+    0 6px 16px rgba(45,27,105,0.08);
+  --clay-inset:
+    inset 3px 3px 8px rgba(255,255,255,0.8),
+    inset -3px -3px 8px rgba(45,27,105,0.15);
+  --clay-pressed:
+    inset 4px 4px 12px rgba(45,27,105,0.20),
+    inset -2px -2px 6px rgba(255,255,255,0.6);
+
+  --radius-xl:  28px;
+  --radius-lg:  20px;
+  --radius-md:  14px;
+  --radius-sm:  10px;
+  --radius-pill: 999px;
+
+  --font-display: 'Fredoka One', cursive;
+  --font-body: 'Nunito', sans-serif;
+
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ═══════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg-page);
+  color: var(--text-dark);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+button { cursor: pointer; border: none; font-family: var(--font-body); }
+input, select { font-family: var(--font-body); }
+a { text-decoration: none; color: inherit; }
+
+/* ═══════════════════════════════════════════════
+   CLAY COMPONENTS
+═══════════════════════════════════════════════ */
+.clay-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--clay-shadow);
+  transition: transform 0.2s var(--spring), box-shadow 0.2s ease;
+}
+.clay-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--clay-shadow-lg);
+}
+
+.clay-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 32px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s var(--spring), box-shadow 0.15s ease, opacity 0.2s;
+  box-shadow: var(--clay-shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+.clay-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, transparent 60%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+.clay-btn:hover:not(:disabled) { transform: scale(1.05) translateY(-2px); box-shadow: var(--clay-shadow); }
+.clay-btn:active:not(:disabled) { transform: scale(0.96); box-shadow: var(--clay-inset); }
+.clay-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.clay-btn-primary { background: var(--clay-red); color: #fff; }
+.clay-btn-green   { background: var(--clay-green); color: #fff; }
+.clay-btn-blue    { background: var(--clay-blue); color: #fff; }
+.clay-btn-orange  { background: var(--clay-orange); color: #fff; }
+.clay-btn-purple  { background: var(--clay-purple); color: #fff; }
+.clay-btn-ghost   { background: var(--bg-surface); color: var(--text-dark); }
+
+.clay-input {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  border: 2.5px solid rgba(45,27,105,0.12);
+  background: #FAF8FF;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  box-shadow: var(--clay-inset);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.clay-input:focus {
+  border-color: var(--clay-purple);
+  box-shadow: var(--clay-inset), 0 0 0 3px rgba(162,155,254,0.25);
+}
+
+/* ═══════════════════════════════════════════════
+   PAGE ROUTER
+═══════════════════════════════════════════════ */
+.page { display: none; min-height: 100vh; animation: pageIn 0.4s var(--ease-out) both; }
+.page.active { display: block; }
+
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════
+   NAV BAR
+═══════════════════════════════════════════════ */
+.navbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 24px;
+  background: rgba(240,238,249,0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.navbar-logo {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--clay-red);
+  letter-spacing: -0.5px;
+}
+.navbar-logo span { color: var(--text-dark); }
+.nav-links { display: flex; gap: 8px; align-items: center; }
+.nav-link {
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-link:hover { background: rgba(255,107,107,0.1); color: var(--clay-red); }
+.nav-cta {
+  padding: 8px 20px;
+  border-radius: var(--radius-pill);
+  background: var(--clay-red);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.875rem;
+  cursor: pointer;
+  box-shadow: var(--clay-shadow-sm);
+  transition: transform 0.15s var(--spring), box-shadow 0.15s;
+}
+.nav-cta:hover { transform: scale(1.05); box-shadow: var(--clay-shadow); }
+
+/* ═══════════════════════════════════════════════
+   LANDING PAGE
+═══════════════════════════════════════════════ */
+#page-landing { background: var(--bg-page); }
+
+/* HERO */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 100px 24px 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+  gap: 40px;
+  position: relative;
+}
+.hero-bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+.hero-content { flex: 1; position: relative; z-index: 1; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,107,107,0.12);
+  color: var(--clay-red);
+  border-radius: var(--radius-pill);
+  padding: 6px 16px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+  border: 2px solid rgba(255,107,107,0.25);
+}
+.hero-badge-dot {
+  width: 8px; height: 8px;
+  background: var(--clay-red);
+  border-radius: 50%;
+  animation: pulse-dot 1.5s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  line-height: 1.1;
+  color: var(--text-dark);
+  margin-bottom: 20px;
+}
+.hero h1 .accent { color: var(--clay-red); }
+.hero h1 .accent2 { color: var(--clay-blue); }
+.hero p {
+  font-size: 1.15rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 36px;
+  max-width: 480px;
+  font-weight: 600;
+}
+.hero-cta-group { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+.hero-cta-main {
+  font-size: 1.15rem !important;
+  padding: 18px 40px !important;
+  animation: float-btn 3s ease-in-out infinite;
+}
+@keyframes float-btn {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.hero-cta-main:hover { animation: none; transform: scale(1.07) translateY(-4px); }
+.hero-stats {
+  display: flex; gap: 28px; margin-top: 44px; flex-wrap: wrap;
+}
+.hero-stat { }
+.hero-stat strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--text-dark);
+  line-height: 1;
+}
+.hero-stat span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+/* FLOATING PHONE VISUAL */
+.hero-visual {
+  flex: 0 0 340px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+.phone-3d {
+  width: 220px;
+  height: 420px;
+  background: linear-gradient(145deg, #ffffff, #e8e2f8);
+  border-radius: 44px;
+  box-shadow:
+    8px 8px 0 rgba(45,27,105,0.15),
+    16px 16px 0 rgba(45,27,105,0.08),
+    0 30px 80px rgba(45,27,105,0.18),
+    inset 3px 3px 12px rgba(255,255,255,0.9),
+    inset -2px -2px 8px rgba(45,27,105,0.10);
+  position: relative;
+  animation: float-phone 4s ease-in-out infinite;
+  border: 3px solid rgba(255,255,255,0.8);
+}
+@keyframes float-phone {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-18px) rotate(-3deg); }
+}
+.phone-3d::before {
+  content: '';
+  position: absolute;
+  top: 16px; left: 50%; transform: translateX(-50%);
+  width: 80px; height: 22px;
+  background: rgba(45,27,105,0.08);
+  border-radius: 999px;
+}
+.phone-screen {
+  position: absolute;
+  top: 52px; left: 14px; right: 14px; bottom: 24px;
+  background: linear-gradient(135deg, #1DD1A1 0%, #54A0FF 50%, #A29BFE 100%);
+  border-radius: 32px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+}
+.phone-screen-icon {
+  width: 60px; height: 60px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  box-shadow: inset 2px 2px 6px rgba(255,255,255,0.4);
+}
+.phone-screen-text {
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-align: center;
+}
+.phone-screen-bar {
+  width: 80%; height: 8px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 999px;
+  margin: 2px 0;
+}
+.phone-screen-bar.short { width: 55%; background: rgba(255,255,255,0.2); }
+.phone-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* FEATURES SECTION */
+.section { padding: 80px 24px; max-width: 1100px; margin: 0 auto; }
+.section-label {
+  font-weight: 800; font-size: 0.85rem; letter-spacing: 2px;
+  color: var(--clay-purple); text-transform: uppercase; margin-bottom: 12px;
+}
+.section h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  color: var(--text-dark);
+  margin-bottom: 48px;
+}
+.section h2 em { color: var(--clay-red); font-style: normal; }
+
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+.feature-card {
+  padding: 32px 28px;
+  position: relative;
+  overflow: hidden;
+}
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: -20px; right: -20px;
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  opacity: 0.15;
+}
+.feature-card.fc-1::before { background: var(--clay-red); }
+.feature-card.fc-2::before { background: var(--clay-blue); }
+.feature-card.fc-3::before { background: var(--clay-green); }
+
+.feature-icon {
+  width: 64px; height: 64px;
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  margin-bottom: 20px;
+  box-shadow: var(--clay-shadow-sm);
+}
+.fi-red    { background: linear-gradient(135deg, #FF6B6B, #FF8E53); }
+.fi-blue   { background: linear-gradient(135deg, #54A0FF, #00D2D3); }
+.fi-green  { background: linear-gradient(135deg, #1DD1A1, #FECA57); }
+
+.feature-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--text-dark);
+  margin-bottom: 10px;
+}
+.feature-card p { color: var(--text-muted); font-weight: 600; line-height: 1.6; font-size: 0.95rem; }
+
+/* BIG BENTO FEATURE */
+.bento-big {
+  grid-column: span 2;
+  background: linear-gradient(135deg, #2D1B69, #54A0FF);
+  color: #fff;
+  padding: 44px 40px;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+}
+.bento-big h3 { font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 12px; }
+.bento-big p { opacity: 0.85; font-weight: 600; line-height: 1.6; max-width: 340px; font-size: 0.95rem; }
+.bento-big-visual {
+  font-size: 80px;
+  animation: float-phone 3s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* TESTIMONIALS */
+.testimonial-track {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 12px 4px 20px;
+  scrollbar-width: none;
+  cursor: grab;
+}
+.testimonial-track::-webkit-scrollbar { display: none; }
+.testimonial-card {
+  flex: 0 0 280px;
+  padding: 24px;
+  position: relative;
+}
+.stars { color: var(--clay-orange); font-size: 1rem; margin-bottom: 12px; }
+.testimonial-card p { font-weight: 600; color: var(--text-dark); line-height: 1.6; font-size: 0.95rem; margin-bottom: 16px; }
+.reviewer { display: flex; align-items: center; gap: 10px; }
+.reviewer-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.9rem; color: #fff;
+  box-shadow: var(--clay-shadow-sm);
+}
+.reviewer-name { font-weight: 800; font-size: 0.875rem; color: var(--text-dark); }
+.reviewer-sub  { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+
+/* ═══════════════════════════════════════════════
+   DIAGNOSTIC FLOW — Shared
+═══════════════════════════════════════════════ */
+#page-diagnostic {
+  background: var(--bg-page);
+  min-height: 100vh;
+  padding: 80px 16px 120px;
+}
+.diag-container {
+  max-width: 680px;
+  margin: 0 auto;
+}
+.diag-header {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 32px;
+}
+.back-btn {
+  width: 44px; height: 44px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: var(--clay-shadow-sm);
+  border: none;
+  transition: transform 0.15s var(--spring);
+  flex-shrink: 0;
+}
+.back-btn:hover { transform: scale(1.1); }
+
+.step-pill {
+  background: rgba(162,155,254,0.18);
+  color: var(--clay-purple);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  font-weight: 800;
+  font-size: 0.8rem;
+  border: 2px solid rgba(162,155,254,0.3);
+}
+.diag-title {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  color: var(--text-dark);
+}
+.diag-subtitle { color: var(--text-muted); font-weight: 600; font-size: 0.95rem; margin-top: 4px; }
+
+/* Step progress bar */
+.progress-bar-wrap {
+  height: 8px;
+  background: rgba(45,27,105,0.08);
+  border-radius: 999px;
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--clay-red), var(--clay-purple));
+  border-radius: 999px;
+  transition: width 0.5s var(--spring);
+}
+
+/* ═══════════════════════════════════════════════
+   STEP 1 — Device Selection
+═══════════════════════════════════════════════ */
+.form-group { margin-bottom: 20px; }
+.form-label {
+  display: block;
+  font-weight: 800;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.clay-select {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  border: 2.5px solid rgba(45,27,105,0.12);
+  background: #FAF8FF;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  box-shadow: var(--clay-inset);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237C7097' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.clay-select:focus { border-color: var(--clay-purple); }
+
+/* Brand Grid */
+.brand-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+.brand-chip {
+  padding: 10px 6px;
+  border-radius: var(--radius-md);
+  border: 2.5px solid rgba(45,27,105,0.10);
+  background: #FAF8FF;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s var(--spring);
+  box-shadow: var(--clay-shadow-sm);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.brand-chip:hover { transform: scale(1.05); border-color: var(--clay-purple); color: var(--clay-purple); }
+.brand-chip.selected {
+  background: var(--clay-purple);
+  border-color: var(--clay-purple);
+  color: #fff;
+  box-shadow: var(--clay-shadow);
+  transform: scale(1.04);
+}
+.brand-chip .brand-emoji { font-size: 1.4rem; }
+
+.step-action {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex; gap: 12px;
+}
+
+/* ═══════════════════════════════════════════════
+   STEP 2 — Symptom Selection
+═══════════════════════════════════════════════ */
+.symptom-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 100px;
+}
+.symptom-card {
+  padding: 24px;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all 0.2s var(--spring);
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+.symptom-card.selected {
+  border-color: currentColor;
+  box-shadow: var(--clay-pressed), 0 0 0 3px rgba(162,155,254,0.2);
+  transform: scale(0.98);
+}
+.symptom-card .check-badge {
+  position: absolute;
+  top: 14px; right: 14px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--clay-green);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  color: #fff;
+  opacity: 0;
+  transform: scale(0);
+  transition: all 0.25s var(--spring);
+}
+.symptom-card.selected .check-badge {
+  opacity: 1;
+  transform: scale(1);
+}
+.symptom-icon {
+  font-size: 2.5rem;
+  margin-bottom: 14px;
+  display: block;
+  transition: transform 0.2s var(--spring);
+}
+.symptom-card:hover .symptom-icon { transform: scale(1.15) rotate(-5deg); }
+.symptom-card h4 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-dark);
+  margin-bottom: 6px;
+}
+.symptom-card p { font-size: 0.875rem; color: var(--text-muted); font-weight: 600; line-height: 1.5; }
+
+/* Floating pill bar */
+.pill-bar {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-dark);
+  border-radius: var(--radius-pill);
+  padding: 12px 12px 12px 20px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 8px 32px rgba(45,27,105,0.3);
+  transition: all 0.3s var(--spring);
+  z-index: 50;
+  white-space: nowrap;
+}
+.pill-count {
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+.pill-count span {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  background: var(--clay-red);
+  border-radius: 50%;
+  font-size: 0.8rem;
+  margin-right: 4px;
+}
+
+/* ═══════════════════════════════════════════════
+   STEP 3 — Review
+═══════════════════════════════════════════════ */
+.review-device-card {
+  padding: 28px;
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 20px;
+}
+.review-phone-icon {
+  width: 72px; height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--clay-blue), var(--clay-purple));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  box-shadow: var(--clay-shadow-sm);
+  flex-shrink: 0;
+}
+.review-device-name {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--text-dark);
+}
+.review-device-sub { color: var(--text-muted); font-weight: 600; font-size: 0.9rem; }
+
+.review-symptoms-card { padding: 24px; }
+.review-symptoms-title {
+  font-weight: 800; color: var(--text-muted); font-size: 0.8rem;
+  letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px;
+}
+.review-symptom-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(162,155,254,0.12);
+  border: 2px solid rgba(162,155,254,0.25);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  font-weight: 700; font-size: 0.875rem;
+  color: var(--clay-purple);
+  margin: 4px 4px 4px 0;
+}
+
+/* Analyze button pulse */
+.pulse-btn {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: var(--clay-shadow), 0 0 0 0 rgba(29,209,161,0.4); }
+  50%       { box-shadow: var(--clay-shadow-lg), 0 0 0 12px rgba(29,209,161,0); }
+}
+
+/* ═══════════════════════════════════════════════
+   STEP 4 — Result
+═══════════════════════════════════════════════ */
+.result-hero {
+  padding: 36px 32px;
+  background: linear-gradient(135deg, #2D1B69, #54A0FF);
+  color: #fff;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.result-emoji {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 12px;
+  animation: bounce-in 0.6s var(--spring);
+}
+@keyframes bounce-in {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.result-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+.match-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.2);
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: var(--radius-pill);
+  padding: 6px 16px;
+  font-weight: 800; font-size: 0.875rem;
+  backdrop-filter: blur(8px);
+}
+.result-explanation {
+  padding: 28px;
+  margin-bottom: 16px;
+}
+.result-explanation h4 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  color: var(--text-dark);
+}
+.result-explanation p {
+  color: var(--text-muted); font-weight: 600; line-height: 1.7; font-size: 0.95rem;
+}
+.solution-list { list-style: none; }
+.solution-list li {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1.5px dashed rgba(45,27,105,0.08);
+  font-weight: 600; font-size: 0.95rem; color: var(--text-dark);
+}
+.solution-list li:last-child { border-bottom: none; }
+.solution-num {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--clay-green), var(--clay-teal));
+  color: #fff;
+  font-weight: 800; font-size: 0.75rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.symptom-bullet {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 600; color: var(--text-muted); font-size: 0.9rem;
+  padding: 6px 0;
+}
+.symptom-bullet::before {
+  content: '';
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--clay-red);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Accordion */
+.accordion {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--clay-shadow-sm);
+  margin-top: 8px;
+}
+.accordion-trigger {
+  width: 100%;
+  padding: 18px 24px;
+  background: var(--bg-surface);
+  border: none;
+  display: flex; align-items: center; justify-content: space-between;
+  font-weight: 800; font-size: 0.95rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: var(--font-body);
+}
+.accordion-trigger:hover { background: #FAF8FF; }
+.accordion-icon {
+  transition: transform 0.3s var(--spring);
+  font-size: 1.1rem;
+}
+.accordion-icon.open { transform: rotate(180deg); }
+.accordion-body {
+  background: #FAF8FF;
+  padding: 0 24px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+}
+.accordion-body.open { max-height: 400px; padding: 20px 24px; }
+.tech-label { font-weight: 800; font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.tech-code {
+  font-family: 'Courier New', monospace;
+  background: rgba(45,27,105,0.06);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-size: 0.875rem;
+  color: var(--clay-purple);
+  border: 1px solid rgba(162,155,254,0.3);
+  display: inline-block;
+  margin: 3px;
+}
+.rule-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 0; border-bottom: 1px dashed rgba(45,27,105,0.08);
+  font-size: 0.85rem; font-weight: 600; color: var(--text-muted);
+}
+.rule-row:last-child { border-bottom: none; }
+.rule-then { color: var(--clay-green); font-weight: 800; }
+
+/* ═══════════════════════════════════════════════
+   ADMIN PAGE
+═══════════════════════════════════════════════ */
+#page-admin { background: #F7F8FA; min-height: 100vh; }
+.admin-nav {
+  background: #fff;
+  border-bottom: 1px solid #E8EAF0;
+  padding: 0 32px;
+  display: flex; align-items: center; gap: 24px;
+  height: 60px;
+  position: sticky; top: 0; z-index: 100;
+}
+.admin-logo {
+  font-weight: 900; font-size: 1.1rem; color: #1a1a2e;
+  display: flex; align-items: center; gap: 8px;
+}
+.admin-logo .badge {
+  background: #FF6B6B; color: #fff;
+  padding: 2px 8px; border-radius: 4px; font-size: 0.7rem;
+}
+.admin-tabs { display: flex; gap: 4px; margin-left: auto; }
+.admin-tab {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-weight: 700; font-size: 0.875rem;
+  cursor: pointer; border: none; background: transparent;
+  color: #6B7280;
+  transition: background 0.15s, color 0.15s;
+  font-family: var(--font-body);
+}
+.admin-tab:hover { background: #F3F4F6; color: #1a1a2e; }
+.admin-tab.active { background: #EEF2FF; color: #4F46E5; }
+
+.admin-content { padding: 32px; max-width: 1100px; margin: 0 auto; }
+.admin-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.admin-card-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid #E5E7EB;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.admin-card-header h3 { font-weight: 800; font-size: 1rem; color: #1a1a2e; }
+.admin-card-header p { font-size: 0.8rem; color: #6B7280; margin-top: 2px; }
+.add-btn {
+  padding: 7px 14px;
+  background: #4F46E5; color: #fff;
+  border-radius: 6px;
+  font-weight: 700; font-size: 0.8rem;
+  cursor: pointer; border: none;
+  font-family: var(--font-body);
+  transition: background 0.15s;
+}
+.add-btn:hover { background: #4338CA; }
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.data-table th {
+  padding: 10px 16px;
+  background: #F9FAFB;
+  color: #374151;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 1px solid #E5E7EB;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #F3F4F6;
+  color: #374151;
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #F9FAFB; }
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700; font-size: 0.75rem;
+  margin: 2px;
+}
+.tag-blue   { background: #EEF2FF; color: #4F46E5; }
+.tag-green  { background: #ECFDF5; color: #059669; }
+.tag-red    { background: #FEF2F2; color: #DC2626; }
+.tag-orange { background: #FFF7ED; color: #D97706; }
+.tag-gray   { background: #F3F4F6; color: #6B7280; }
+
+.action-btn {
+  padding: 5px 10px; border-radius: 5px;
+  font-size: 0.75rem; font-weight: 700; cursor: pointer; border: none;
+  font-family: var(--font-body);
+  transition: background 0.1s;
+}
+.action-edit   { background: #EEF2FF; color: #4F46E5; }
+.action-edit:hover { background: #E0E7FF; }
+.action-delete { background: #FEF2F2; color: #DC2626; }
+.action-delete:hover { background: #FEE2E2; }
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: #fff; border-radius: 12px; border: 1px solid #E5E7EB;
+  padding: 20px;
+}
+.stat-card .num { font-weight: 900; font-size: 2rem; color: #1a1a2e; }
+.stat-card .lbl { font-size: 0.8rem; color: #6B7280; font-weight: 600; margin-top: 4px; }
+.stat-card .chg { font-size: 0.75rem; font-weight: 700; margin-top: 8px; }
+.chg.up { color: #059669; }
+.chg.down { color: #DC2626; }
+
+/* ═══════════════════════════════════════════════
+   SCROLL FADE-IN ANIMATION
+═══════════════════════════════════════════════ */
+.fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s var(--spring);
+}
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════════════
+   LOADING OVERLAY
+═══════════════════════════════════════════════ */
+.loading-overlay {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(45,27,105,0.7);
+  backdrop-filter: blur(12px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 20px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.loading-overlay.active { opacity: 1; pointer-events: all; }
+.loading-clay {
+  width: 80px; height: 80px;
+  border-radius: 24px;
+  background: var(--bg-surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.5rem;
+  box-shadow: var(--clay-shadow-lg);
+  animation: spin-clay 1.5s var(--spring) infinite;
+}
+@keyframes spin-clay {
+  0%   { transform: rotate(0deg) scale(1); }
+  25%  { transform: rotate(90deg) scale(1.1); }
+  50%  { transform: rotate(180deg) scale(1); }
+  75%  { transform: rotate(270deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+.loading-text { color: #fff; font-weight: 800; font-size: 1rem; }
+
+/* ═══════════════════════════════════════════════
+   HAMBURGER BUTTON — mobile only, hidden on desktop
+═══════════════════════════════════════════════ */
+.hamburger-btn {
+  display: none; /* hidden by default; shown only in mobile MQ below */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 44px; height: 44px;
+  border-radius: var(--radius-md);
+  background: rgba(255,107,107,0.10);
+  border: 2px solid rgba(255,107,107,0.20);
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.hamburger-btn:hover { background: rgba(255,107,107,0.18); }
+.hamburger-btn span {
+  display: block;
+  width: 20px; height: 2.5px;
+  background: var(--clay-red);
+  border-radius: 99px;
+  transition: transform 0.3s var(--spring), opacity 0.2s;
+}
+.hamburger-btn.open span:nth-child(1) { transform: translateY(7.5px) rotate(45deg); }
+.hamburger-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.hamburger-btn.open span:nth-child(3) { transform: translateY(-7.5px) rotate(-45deg); }
+
+/* ═══════════════════════════════════════════════
+   MOBILE DRAWER OVERLAY
+═══════════════════════════════════════════════ */
+.mobile-drawer-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(45,27,105,0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.mobile-drawer-overlay.open { opacity: 1; }
+
+.mobile-drawer {
+  position: absolute;
+  top: 0; right: 0;
+  width: min(320px, 85vw);
+  height: 100%;
+  background: rgba(250,248,255,0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: -8px 0 40px rgba(45,27,105,0.18);
+  border-radius: 24px 0 0 24px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transform: translateX(100%);
+  transition: transform 0.35s var(--spring);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.mobile-drawer-overlay.open .mobile-drawer {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1.5px solid rgba(45,27,105,0.08);
+}
+.drawer-logo {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--clay-red);
+}
+.drawer-logo span { color: var(--text-dark); }
+.drawer-close {
+  width: 44px; height: 44px;
+  border-radius: var(--radius-md);
+  border: 2px solid rgba(45,27,105,0.10);
+  background: var(--bg-surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: var(--clay-shadow-sm);
+  transition: transform 0.15s var(--spring);
+  color: var(--text-dark);
+}
+.drawer-close:hover { transform: scale(1.1); }
+
+.drawer-link {
+  display: flex; align-items: center; gap: 14px;
+  min-height: 54px; /* >= 44px touch target */
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.15s var(--spring);
+  border: none; background: transparent; width: 100%; text-align: left;
+  font-family: var(--font-body);
+}
+.drawer-link:hover {
+  background: rgba(255,107,107,0.08);
+  color: var(--clay-red);
+  transform: translateX(4px);
+}
+.drawer-link .dl-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.dl-icon-home   { background: rgba(255,107,107,0.12); }
+.dl-icon-diag   { background: rgba(29,209,161,0.12); }
+.dl-icon-admin  { background: rgba(84,160,255,0.12); }
+
+.drawer-cta {
+  margin-top: 8px;
+  width: 100%;
+  min-height: 52px;
+  font-size: 1rem !important;
+  border-radius: var(--radius-md) !important;
+}
+
+.drawer-divider {
+  height: 1.5px;
+  background: rgba(45,27,105,0.07);
+  border-radius: 99px;
+  margin: 4px 0;
+}
+
+/* ═══════════════════════════════════════════════
+   TABLE SCROLL WRAPPER — mobile swipe, no desktop overflow
+═══════════════════════════════════════════════ */
+.table-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Subtle scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(45,27,105,0.15) transparent;
+}
+.table-scroll-wrap::-webkit-scrollbar { height: 4px; }
+.table-scroll-wrap::-webkit-scrollbar-track { background: transparent; }
+.table-scroll-wrap::-webkit-scrollbar-thumb { background: rgba(45,27,105,0.15); border-radius: 99px; }
+
+/* On large screens: no forced scroll if table fits */
+@media (min-width: 1024px) {
+  .table-scroll-wrap { overflow-x: visible; }
+}
+
+/* ═══════════════════════════════════════════════
+   SAFE AREA — iOS/Android bottom bar clearance
+═══════════════════════════════════════════════ */
+body {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pill-bar {
+  /* Add safe-area offset so floating bar clears system nav */
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — MOBILE  (< 768px)
+   All mobile-specific overrides isolated here.
+   Desktop rules above are never touched.
+═══════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* ── Navbar: hide desktop links, show hamburger ── */
+  .navbar { padding: 10px 16px; }
+  .nav-links { display: none !important; }
+  .nav-cta   { display: none !important; }
+  .hamburger-btn { display: flex; }
+
+  /* ── Hero ── */
+  .hero {
+    flex-direction: column;
+    padding-top: 80px;
+    padding-bottom: 48px;
+    text-align: center;
+    gap: 28px;
+  }
+  .hero p { margin: 0 auto 28px; }
+  .hero-cta-group { justify-content: center; }
+  .hero-stats { justify-content: center; gap: 20px; }
+  .hero-visual { order: -1; flex: unset; }
+  .phone-3d { width: 150px; height: 280px; }
+
+  /* ── Bento grid: big tile collapses to 1 col ── */
+  .bento-big { grid-column: span 1; flex-direction: column; padding: 28px 24px; }
+  .bento-big-visual { font-size: 52px; align-self: center; }
+
+  /* ── Symptom grid: single column ── */
+  .symptom-grid { grid-template-columns: 1fr; }
+
+  /* ── Pill bar: full width treatment ── */
+  .pill-bar {
+    left: 12px;
+    right: 12px;
+    transform: none;
+    border-radius: var(--radius-lg);
+    justify-content: space-between;
+  }
+
+  /* ── Diag container: tighter horizontal padding ── */
+  #page-diagnostic { padding-left: 12px; padding-right: 12px; }
+
+  /* ── Admin nav: stack tabs below logo on small screens ── */
+  .admin-nav {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 12px 16px;
+    gap: 10px;
+  }
+  .admin-tabs { margin-left: 0; width: 100%; overflow-x: auto; }
+  .admin-content { padding: 16px; }
+
+  /* ── Touch targets: action buttons in admin ── */
+  .action-btn { min-height: 44px; padding: 0 14px; }
+  .admin-tab  { min-height: 36px; }
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — DESKTOP SAFEGUARD (>= 768px)
+   Explicitly restore everything that must NOT
+   be affected by any mobile rule above.
+═══════════════════════════════════════════════ */
+@media (min-width: 768px) {
+  .hamburger-btn        { display: none !important; }
+  .mobile-drawer-overlay { display: none !important; }
+  .nav-links            { display: flex !important; }
+  .nav-cta              { display: block !important; }
+
+  /* Desktop bento must always be multi-column */
+  .bento-grid           { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .bento-big            { grid-column: span 2; flex-direction: row; }
+
+  /* Desktop symptom grid: restore two-column minimum */
+  .symptom-grid         { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+
+  /* Desktop pill bar: centered, not full-width */
+  .pill-bar {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    border-radius: var(--radius-pill);
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     LOADING OVERLAY
+═══════════════════════════════════════════ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-clay">🔍</div>
+  <div class="loading-text">Menganalisis gejalamu...</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     NAVBAR
+═══════════════════════════════════════════ -->
+<nav class="navbar" id="mainNav">
+  <div class="navbar-logo">Cek<span>HP</span></div>
+  <div class="nav-links">
+    <span class="nav-link" onclick="goTo('page-landing')">Beranda</span>
+    <span class="nav-link" onclick="startDiag()">Diagnosa</span>
+    <span class="nav-link" onclick="goTo('page-admin')">Admin</span>
+  </div>
+  <button class="nav-cta" onclick="startDiag()">Mulai Diagnosa →</button>
+  <button class="hamburger-btn" id="hamburgerBtn" onclick="openDrawer()" aria-label="Buka menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE DRAWER -->
+<div class="mobile-drawer-overlay" id="mobileDrawer" onclick="closeDrawerOnBackdrop(event)">
+  <div class="mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu navigasi">
+    <div class="drawer-header">
+      <div class="drawer-logo">Cek<span>HP</span></div>
+      <button class="drawer-close" onclick="closeDrawer()" aria-label="Tutup menu">✕</button>
+    </div>
+    <button class="drawer-link" onclick="drawerNav('page-landing')">
+      <span class="dl-icon dl-icon-home">🏠</span>Beranda
+    </button>
+    <div class="drawer-divider"></div>
+    <button class="drawer-link" onclick="drawerNav('diag')">
+      <span class="dl-icon dl-icon-diag">🔍</span>Mulai Diagnosa
+    </button>
+    <button class="drawer-link" onclick="drawerNav('page-admin')">
+      <span class="dl-icon dl-icon-admin">⚙️</span>Admin Panel
+    </button>
+    <div class="drawer-divider"></div>
+    <button class="clay-btn clay-btn-primary drawer-cta" onclick="drawerNav('diag')">
+      🚀 Mulai Diagnosa Sekarang
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE: LANDING
+═══════════════════════════════════════════ -->
+<div id="page-landing" class="page active">
+
+  <!-- HERO -->
+  <section style="position:relative; overflow:hidden;">
+    <div class="hero-bg-blob" style="width:500px;height:500px;background:rgba(255,107,107,0.18);top:-100px;left:-100px;"></div>
+    <div class="hero-bg-blob" style="width:400px;height:400px;background:rgba(84,160,255,0.15);top:200px;right:-100px;"></div>
+    <div class="hero-bg-blob" style="width:300px;height:300px;background:rgba(29,209,161,0.12);bottom:-50px;left:30%;"></div>
+
+    <div class="hero">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="hero-badge-dot"></span>
+          Diagnosa Gratis & Instan
+        </div>
+        <h1>Cek Masalah<br><span class="accent">HP-mu</span> dalam<br><span class="accent2">Detik!</span></h1>
+        <p>Jelaskan gejala HP-mu dengan bahasa sehari-hari. Kami analisa, kamu dapat solusinya — tanpa ribet, tanpa istilah teknis.</p>
+        <div class="hero-cta-group">
+          <button class="clay-btn clay-btn-primary hero-cta-main" onclick="startDiag()">
+            🚀 Mulai Diagnosa
+          </button>
+          <button class="clay-btn clay-btn-ghost" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">
+            Lihat Cara Kerja ↓
+          </button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <strong>50K+</strong>
+            <span>Diagnosa Selesai</span>
+          </div>
+          <div class="hero-stat">
+            <strong>98%</strong>
+            <span>Akurasi Hasil</span>
+          </div>
+          <div class="hero-stat">
+            <strong>&lt; 30 dtk</strong>
+            <span>Waktu Analisis</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="phone-3d">
+          <div class="phone-screen">
+            <div class="phone-screen-icon">🔍</div>
+            <div class="phone-screen-text">Diagnosa Aktif</div>
+            <div class="phone-screen-bar"></div>
+            <div class="phone-screen-bar short"></div>
+            <div class="phone-screen-bar"></div>
+          </div>
+        </div>
+        <!-- Orbiting blobs -->
+        <div class="phone-orb" style="width:60px;height:60px;background:rgba(255,107,107,0.3);top:40px;right:-10px;animation:float-phone 2.5s ease-in-out infinite;"></div>
+        <div class="phone-orb" style="width:40px;height:40px;background:rgba(29,209,161,0.35);bottom:80px;left:-10px;animation:float-phone 3.5s ease-in-out 0.5s infinite;"></div>
+        <div class="phone-orb" style="width:28px;height:28px;background:rgba(162,155,254,0.4);top:150px;right:-30px;animation:float-phone 2s ease-in-out 1s infinite;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES BENTO -->
+  <section class="section" id="features">
+    <div class="fade-up">
+      <p class="section-label">🎯 Kenapa CekHP?</p>
+      <h2>Diagnosa <em>Canggih</em>,<br>Bahasa Tetap Santai</h2>
+    </div>
+    <div class="bento-grid fade-up">
+      <div class="clay-card feature-card fc-1">
+        <div class="feature-icon fi-red">⚡</div>
+        <h3>Cepat & Akurat</h3>
+        <p>Analisis selesai dalam hitungan detik. Sistem pintar kami mencocokkan gejala kamu dengan ribuan pola kerusakan yang sudah dipelajari.</p>
+      </div>
+      <div class="clay-card feature-card fc-2">
+        <div class="feature-icon fi-blue">💬</div>
+        <h3>Bahasa Mudah</h3>
+        <p>Nggak ada istilah teknis yang bikin pusing. Semua penjelasan pakai bahasa Indonesia yang mudah dimengerti semua orang.</p>
+      </div>
+      <div class="clay-card feature-card fc-3">
+        <div class="feature-icon fi-green">🛠️</div>
+        <h3>Solusi Praktis</h3>
+        <p>Bukan cuma diagnosa — kami kasih langkah-langkah perbaikan yang bisa kamu coba sendiri di rumah sebelum ke tukang servis.</p>
+      </div>
+      <div class="clay-card bento-big">
+        <div>
+          <h3>Lebih dari 200 Pola Kerusakan Terdeteksi</h3>
+          <p>Dari baterai boros sampai layar mati total — database kami terus diperbarui dengan kasus terbaru dari seluruh Indonesia.</p>
+          <button class="clay-btn clay-btn-green" style="margin-top:20px" onclick="startDiag()">Coba Sekarang →</button>
+        </div>
+        <div class="bento-big-visual">📱</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="section fade-up">
+    <p class="section-label">💬 Apa Kata Mereka?</p>
+    <h2>Sudah <em>Ribuan</em> Pengguna<br>Terbantu!</h2>
+    <div class="testimonial-track" id="testimonialTrack">
+      <div class="clay-card testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p>"HP Samsung aku baterainya cepat habis banget. Dikira rusak parah, ternyata cuma settingan yang salah. Gampang banget solusinya!"</p>
+        <div class="reviewer">
+          <div class="reviewer-avatar" style="background:linear-gradient(135deg,#FF6B6B,#FF9F43)">AG</div>
+          <div>
+            <div class="reviewer-name">Agung Pratama</div>
+            <div class="reviewer-sub">Pengguna Samsung</div>
+          </div>
+        </div>
+      </div>
+      <div class="clay-card testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p>"Layar iPhone aku tiba-tiba gerak sendiri waktu lagi di charge. CekHP langsung tahu penyebabnya dan kasih solusi yang tepat!"</p>
+        <div class="reviewer">
+          <div class="reviewer-avatar" style="background:linear-gradient(135deg,#54A0FF,#00D2D3)">SR</div>
+          <div>
+            <div class="reviewer-name">Sari Rahayu</div>
+            <div class="reviewer-sub">Pengguna iPhone</div>
+          </div>
+        </div>
+      </div>
+      <div class="clay-card testimonial-card">
+        <div class="stars">★★★★⭐</div>
+        <p>"Aplikasi ini ngejelasinnya gampang banget. Biasanya aku langsung ke counter, sekarang bisa coba sendiri dulu. Hemat biaya!"</p>
+        <div class="reviewer">
+          <div class="reviewer-avatar" style="background:linear-gradient(135deg,#1DD1A1,#FECA57)">DH</div>
+          <div>
+            <div class="reviewer-name">Doni Hidayat</div>
+            <div class="reviewer-sub">Pengguna Xiaomi</div>
+          </div>
+        </div>
+      </div>
+      <div class="clay-card testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p>"Diagnosa akurat, bahasa mudah dimengerti, solusi juga masuk akal. Rekomen banget buat yang awam teknologi kayak saya!"</p>
+        <div class="reviewer">
+          <div class="reviewer-avatar" style="background:linear-gradient(135deg,#A29BFE,#FD79A8)">NF</div>
+          <div>
+            <div class="reviewer-name">Nisa Faradilla</div>
+            <div class="reviewer-sub">Pengguna OPPO</div>
+          </div>
+        </div>
+      </div>
+      <div class="clay-card testimonial-card">
+        <div class="stars">★★★★★</div>
+        <p>"Port charger HP aku rusak. Cuma 3 langkah aja udah ketahuan masalahnya. Mantap, nggak harus bawa ke servis dulu!"</p>
+        <div class="reviewer">
+          <div class="reviewer-avatar" style="background:linear-gradient(135deg,#FF9F43,#FF6B6B)">BW</div>
+          <div>
+            <div class="reviewer-name">Budi Wicaksono</div>
+            <div class="reviewer-sub">Pengguna Vivo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FOOTER -->
+  <section style="padding: 80px 24px; text-align: center; position: relative; overflow: hidden;">
+    <div class="hero-bg-blob" style="width:400px;height:400px;background:rgba(162,155,254,0.2);top:-50px;left:50%;transform:translateX(-50%);"></div>
+    <div class="fade-up" style="position:relative;z-index:1;">
+      <h2 style="font-family:var(--font-display);font-size:clamp(1.8rem,5vw,3rem);color:var(--text-dark);margin-bottom:16px;">
+        HP-mu Bermasalah? <span style="color:var(--clay-red)">Cek Sekarang!</span>
+      </h2>
+      <p style="color:var(--text-muted);font-weight:600;font-size:1.05rem;margin-bottom:36px;">
+        Gratis, cepat, dan hasil diagnosa langsung tersedia.
+      </p>
+      <button class="clay-btn clay-btn-primary" style="font-size:1.1rem;padding:18px 48px;" onclick="startDiag()">
+        🚀 Mulai Diagnosa Gratis
+      </button>
+    </div>
+  </section>
+
+  <footer style="text-align:center;padding:24px;color:var(--text-light);font-size:0.85rem;font-weight:600;">
+    © 2025 CekHP · Dibuat dengan ❤️ untuk pengguna Indonesia
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE: DIAGNOSTIC FLOW
+═══════════════════════════════════════════ -->
+<div id="page-diagnostic" class="page">
+  <div class="diag-container">
+    <!-- Progress -->
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressFill" style="width:25%"></div>
+    </div>
+
+    <!-- STEP 1: Device Selection -->
+    <div id="step-1">
+      <div class="diag-header">
+        <button class="back-btn" onclick="goTo('page-landing')">←</button>
+        <div>
+          <div class="step-pill">Langkah 1 dari 4</div>
+          <h2 class="diag-title">Pilih HP Kamu</h2>
+          <p class="diag-subtitle">Biar diagnosa makin akurat, ceritain dulu HP-mu</p>
+        </div>
+      </div>
+
+      <div class="clay-card" style="padding:28px;margin-bottom:20px;">
+        <p style="font-weight:800;font-size:0.875rem;color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px;">Pilih Merek HP</p>
+        <div class="brand-grid" id="brandGrid">
+          <!-- injected by JS -->
+        </div>
+      </div>
+
+      <div class="clay-card" style="padding:28px;">
+        <label class="form-label">Model HP (Opsional)</label>
+        <input type="text" class="clay-input" id="modelInput" placeholder="Contoh: Galaxy S23, iPhone 14, Redmi Note 12…">
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-top:8px;font-weight:600;">
+          💡 Isi model HP untuk hasil yang lebih spesifik
+        </p>
+      </div>
+
+      <div class="step-action">
+        <button class="clay-btn clay-btn-primary" id="step1Next" onclick="goStep(2)" disabled>
+          Lanjut →
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Symptom Selection -->
+    <div id="step-2" style="display:none;">
+      <div class="diag-header">
+        <button class="back-btn" onclick="goStep(1)">←</button>
+        <div>
+          <div class="step-pill">Langkah 2 dari 4</div>
+          <h2 class="diag-title">Apa yang Terasa Aneh?</h2>
+          <p class="diag-subtitle">Pilih semua gejala yang kamu alami saat ini</p>
+        </div>
+      </div>
+      <div class="symptom-grid" id="symptomGrid">
+        <!-- injected by JS -->
+      </div>
+      <div class="pill-bar" id="pillBar">
+        <div class="pill-count"><span id="symptomCount">0</span> gejala dipilih</div>
+        <button class="clay-btn clay-btn-green" style="padding:10px 20px;" id="step2Next" onclick="goStep(3)" disabled>
+          Lanjut →
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Review -->
+    <div id="step-3" style="display:none;">
+      <div class="diag-header">
+        <button class="back-btn" onclick="goStep(2)">←</button>
+        <div>
+          <div class="step-pill">Langkah 3 dari 4</div>
+          <h2 class="diag-title">Cek Kembali</h2>
+          <p class="diag-subtitle">Pastikan informasinya sudah benar sebelum dianalisis</p>
+        </div>
+      </div>
+
+      <div class="clay-card review-device-card">
+        <div class="review-phone-icon">📱</div>
+        <div>
+          <div class="review-device-name" id="reviewDevice">—</div>
+          <div class="review-device-sub" id="reviewModel">—</div>
+        </div>
+      </div>
+
+      <div class="clay-card review-symptoms-card">
+        <p class="review-symptoms-title">Gejala yang Dipilih</p>
+        <div id="reviewSymptomPills"></div>
+      </div>
+
+      <div style="text-align:center;padding:32px 0 120px;">
+        <button class="clay-btn clay-btn-green pulse-btn" style="font-size:1.05rem;padding:18px 44px;" onclick="runAnalysis()">
+          🔬 Mulai Analisis
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Result -->
+    <div id="step-4" style="display:none;padding-bottom:60px;">
+      <div class="diag-header">
+        <button class="back-btn" onclick="resetDiag()">✕</button>
+        <div>
+          <div class="step-pill">Hasil Diagnosa</div>
+          <h2 class="diag-title">Analisis Selesai!</h2>
+        </div>
+      </div>
+
+      <div class="clay-card result-hero">
+        <span class="result-emoji" id="resultEmoji">🔍</span>
+        <div class="result-title" id="resultTitle">—</div>
+        <div class="match-badge" id="matchBadge">⬤ Kesesuaian Tinggi</div>
+      </div>
+
+      <div class="clay-card result-explanation" style="margin-bottom:16px;">
+        <h4>Penjelasan</h4>
+        <p id="resultExplanation">—</p>
+      </div>
+
+      <div class="clay-card" style="padding:24px;margin-bottom:16px;">
+        <h4 style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:14px;color:var(--text-dark);">Gejala yang Terdeteksi</h4>
+        <div id="resultSymptoms"></div>
+      </div>
+
+      <div class="clay-card" style="padding:24px;margin-bottom:16px;">
+        <h4 style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:16px;color:var(--text-dark);">✅ Langkah Solusi</h4>
+        <ol class="solution-list" id="resultSolutions"></ol>
+      </div>
+
+      <div class="accordion">
+        <button class="accordion-trigger" onclick="toggleAccordion()">
+          <span>🔧 Lihat Detail Teknis</span>
+          <span class="accordion-icon" id="accordionIcon">▼</span>
+        </button>
+        <div class="accordion-body" id="accordionBody">
+          <p class="tech-label">Kode Diagnosis</p>
+          <div id="techCodes" style="margin-bottom:14px;"></div>
+          <p class="tech-label">Aturan yang Berlaku</p>
+          <div id="techRules"></div>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:28px;">
+        <button class="clay-btn clay-btn-primary" onclick="resetDiag()">
+          🔄 Diagnosa Lagi
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE: ADMIN
+═══════════════════════════════════════════ -->
+<div id="page-admin" class="page">
+  <nav class="admin-nav">
+    <div class="admin-logo">
+      <span>CekHP</span>
+      <span class="badge">ADMIN</span>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="adminTab('rules',this)">Aturan Diagnosa</button>
+      <button class="admin-tab" onclick="adminTab('symptoms',this)">Gejala</button>
+      <button class="admin-tab" onclick="adminTab('conditions',this)">Kondisi</button>
+    </div>
+    <button class="clay-btn clay-btn-ghost" style="margin-left:16px;padding:8px 16px;font-size:0.875rem;" onclick="goTo('page-landing')">← Kembali</button>
+  </nav>
+
+  <div class="admin-content">
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="num">14</div>
+        <div class="lbl">Total Aturan Aktif</div>
+        <div class="chg up">↑ +2 minggu ini</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">12</div>
+        <div class="lbl">Jenis Gejala</div>
+        <div class="chg up">↑ +1 baru ditambah</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">8</div>
+        <div class="lbl">Kondisi Teridentifikasi</div>
+        <div class="chg">→ Tidak ada perubahan</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">98%</div>
+        <div class="lbl">Akurasi Diagnosa</div>
+        <div class="chg up">↑ Dari 95% bulan lalu</div>
+      </div>
+    </div>
+
+    <!-- RULES TABLE -->
+    <div id="admin-rules">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h3>Aturan Diagnosa (IF-THEN Rules)</h3>
+            <p>Mapping kondisi gejala ke diagnosis penyakit HP</p>
+          </div>
+          <button class="add-btn" onclick="showAddRule()">+ Tambah Aturan</button>
+        </div>
+        <div class="table-scroll-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID Aturan</th>
+              <th>Jika Gejala (IF)</th>
+              <th>Maka Kondisi (THEN)</th>
+              <th>Kesesuaian</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="rulesTableBody">
+            <!-- injected by JS -->
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SYMPTOMS TABLE -->
+    <div id="admin-symptoms" style="display:none">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h3>Daftar Gejala (Symptom Codes)</h3>
+            <p>Kode internal gejala dan deskripsi pengguna</p>
+          </div>
+          <button class="add-btn">+ Tambah Gejala</button>
+        </div>
+        <div class="table-scroll-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Kode</th><th>Nama Gejala</th><th>Deskripsi Pengguna</th><th>Kategori</th><th>Aksi</th></tr>
+          </thead>
+          <tbody id="symptomsTableBody"></tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONDITIONS TABLE -->
+    <div id="admin-conditions" style="display:none">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <div>
+            <h3>Kondisi / Diagnosis (Condition Codes)</h3>
+            <p>Kode kondisi kerusakan dan informasi teknisnya</p>
+          </div>
+          <button class="add-btn">+ Tambah Kondisi</button>
+        </div>
+        <div class="table-scroll-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Kode</th><th>Nama Kondisi</th><th>Tingkat Keparahan</th><th>Estimasi Biaya</th><th>Aksi</th></tr>
+          </thead>
+          <tbody id="conditionsTableBody"></tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT ENGINE
+═══════════════════════════════════════════ -->
+<script>
+/* ── DATA ── */
+const BRANDS = [
+  { name: 'Samsung',  emoji: '🌀' },
+  { name: 'iPhone',   emoji: '🍎' },
+  { name: 'Xiaomi',   emoji: '🟠' },
+  { name: 'OPPO',     emoji: '🟢' },
+  { name: 'Vivo',     emoji: '🔵' },
+  { name: 'Realme',   emoji: '⚡' },
+  { name: 'Nokia',    emoji: '🔷' },
+  { name: 'Huawei',   emoji: '🌸' },
+  { name: 'Infinix',  emoji: '🌟' },
+  { name: 'Lainnya',  emoji: '📱' },
+];
+
+const SYMPTOMS = [
+  { id: 'G01', emoji: '🔋', title: 'Baterai Cepat Habis', desc: 'HP tidak tahan lama, padahal baru di-charge penuh sudah cepat habis dalam beberapa jam.' },
+  { id: 'G02', emoji: '👆', title: 'Layar Tidak Merespons', desc: 'Ketika kamu sentuh atau geser layar, HP tidak bereaksi sama sekali atau responnya sangat lambat.' },
+  { id: 'G03', emoji: '👻', title: 'Layar Gerak Sendiri', desc: 'Tiba-tiba ada "jari tak terlihat" yang mengetuk dan menggeser layar sendiri tanpa kamu sentuh.' },
+  { id: 'G04', emoji: '🔌', title: 'Tidak Bisa Mengisi Daya', desc: 'Saat charger dicolok, baterai tidak bertambah sama sekali atau pengisian sangat lambat.' },
+  { id: 'G05', emoji: '🌡️', title: 'HP Cepat Panas', desc: 'HP terasa panas di genggaman, terutama saat dipakai atau saat sedang di-charge.' },
+  { id: 'G06', emoji: '📶', title: 'Sinyal Sering Hilang', desc: 'Tanda sinyal tiba-tiba hilang atau kamu tidak bisa menerima telepon dan SMS di area yang biasanya ada sinyal.' },
+  { id: 'G07', emoji: '🔇', title: 'Suara Tidak Keluar', desc: 'Speaker HP diam total, musik tidak terdengar, atau suara orang yang menelepon tidak bisa didengar.' },
+  { id: 'G08', emoji: '📸', title: 'Kamera Bermasalah', desc: 'Foto yang diambil buram, kamera tidak bisa dibuka, atau ada bercak gelap yang mengganggu di foto.' },
+];
+
+const CONDITIONS = [
+  { id: 'K01', name: 'Kerusakan Touchscreen', emoji: '📱', match: 'Sangat Tinggi',
+    explanation: 'Berdasarkan gejala yang kamu alami, sistem sentuh di layar HP kamu mengalami gangguan. Ini bisa disebabkan oleh lapisan digitizer yang rusak, masalah pada konektor layar, atau interferensi listrik saat pengisian daya.',
+    symptoms: ['Layar tidak merespons sentuhan', 'Layar bergerak sendiri tanpa disentuh'],
+    solutions: ['Restart HP kamu — kadang ini cukup untuk reset sistem sentuh.', 'Jika masalah muncul saat di-charge, coba lepas charger dan test kembali. Gunakan charger original.', 'Bersihkan layar dengan kain microfiber kering. Kotoran bisa mengganggu sensor.', 'Cek apakah ada pelindung layar yang terangkat — lepas jika perlu.', 'Jika masih bermasalah, bawa ke service center untuk pemeriksaan digitizer.'],
+    techCodes: ['G02', 'G03', 'K01'],
+    techRules: [
+      { if: ['G02', 'G03'], op: 'AND', then: 'K01' }
+    ]
+  },
+  { id: 'K02', name: 'Masalah Baterai & Daya', emoji: '🔋', match: 'Tinggi',
+    explanation: 'HP kamu menunjukkan tanda-tanda masalah pada sistem daya. Baterai yang sudah mulai menurun kapasitasnya atau ada aplikasi yang "menguras" daya di belakang layar bisa jadi penyebabnya.',
+    symptoms: ['Baterai cepat habis', 'Tidak bisa mengisi daya', 'HP cepat panas saat di-charge'],
+    solutions: ['Cek aplikasi yang paling banyak menguras baterai di Pengaturan > Baterai.', 'Aktifkan mode hemat daya untuk memperpanjang daya tahan.', 'Gunakan charger dan kabel original — charger KW sering jadi biang masalah.', 'Bersihkan port charging dengan cotton bud kering secara perlahan.', 'Jika baterai sudah digunakan lebih dari 2 tahun, pertimbangkan penggantian baterai.'],
+    techCodes: ['G01', 'G04', 'G05', 'K02'],
+    techRules: [
+      { if: ['G01'], op: '', then: 'K02 (Probable)' },
+      { if: ['G04'], op: '', then: 'K02 (Probable)' },
+      { if: ['G01', 'G04'], op: 'AND', then: 'K02 (Confirmed)' },
+      { if: ['G01', 'G05'], op: 'AND', then: 'K02 (High Match)' }
+    ]
+  },
+  { id: 'K03', name: 'Gangguan Sinyal / Jaringan', emoji: '📶', match: 'Tinggi',
+    explanation: 'Sistem antena atau modul jaringan HP kamu mungkin bermasalah. Ini bisa disebabkan oleh kerusakan fisik, pembaruan software yang bermasalah, atau pengaturan jaringan yang perlu direset.',
+    symptoms: ['Sinyal sering hilang', 'Tidak bisa menerima telepon dan SMS'],
+    solutions: ['Aktifkan & matikan Mode Pesawat, tunggu 30 detik lalu aktifkan kembali.', 'Restart HP dan biarkan mencari jaringan secara otomatis.', 'Pergi ke Pengaturan > Jaringan dan pilih jaringan secara manual.', 'Coba reset pengaturan jaringan: Pengaturan > Kelola Umum > Reset > Reset Pengaturan Jaringan.', 'Hubungi operator selulermu jika masalah hanya di area tertentu — mungkin ada gangguan tower.'],
+    techCodes: ['G06', 'K03'],
+    techRules: [
+      { if: ['G06'], op: '', then: 'K03 (Confirmed)' }
+    ]
+  },
+];
+
+/* ── STATE ── */
+let state = {
+  brand: null,
+  model: '',
+  selectedSymptoms: [],
+  currentStep: 1,
+  result: null,
+};
+
+/* ── ROUTER ── */
+function goTo(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  window.scrollTo(0, 0);
+
+  // Hide nav on admin page
+  const nav = document.getElementById('mainNav');
+  nav.style.display = pageId === 'page-admin' ? 'none' : '';
+}
+
+function startDiag() {
+  resetDiag(true);
+  goTo('page-diagnostic');
+}
+
+function resetDiag(silent) {
+  state = { brand: null, model: '', selectedSymptoms: [], currentStep: 1, result: null };
+  if (!silent) goTo('page-landing');
+  renderBrands();
+  renderSymptoms();
+  showStep(1);
+  updateProgress(1);
+}
+
+/* ── STEP NAV ── */
+function goStep(n) {
+  if (n === 1 && state.brand === null) return;
+  if (n === 3) renderReview();
+  showStep(n);
+  updateProgress(n);
+  state.currentStep = n;
+  window.scrollTo(0, 0);
+}
+
+function showStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('step-' + i);
+    if (el) el.style.display = i === n ? 'block' : 'none';
+  }
+}
+
+function updateProgress(step) {
+  const pct = { 1: 25, 2: 50, 3: 75, 4: 100 };
+  document.getElementById('progressFill').style.width = pct[step] + '%';
+}
+
+/* ── BRAND RENDER ── */
+function renderBrands() {
+  const grid = document.getElementById('brandGrid');
+  grid.innerHTML = BRANDS.map(b => `
+    <div class="brand-chip ${state.brand === b.name ? 'selected' : ''}" onclick="selectBrand('${b.name}')">
+      <span class="brand-emoji">${b.emoji}</span>
+      ${b.name}
+    </div>
+  `).join('');
+  document.getElementById('step1Next').disabled = !state.brand;
+}
+
+function selectBrand(name) {
+  state.brand = name;
+  renderBrands();
+  document.getElementById('step1Next').disabled = false;
+}
+
+document.getElementById('modelInput').addEventListener('input', function() {
+  state.model = this.value;
+});
+
+/* ── SYMPTOM RENDER ── */
+const SYMPTOM_COLORS = ['#FF6B6B','#54A0FF','#1DD1A1','#FF9F43','#A29BFE','#FD79A8','#00D2D3','#FECA57'];
+
+function renderSymptoms() {
+  const grid = document.getElementById('symptomGrid');
+  grid.innerHTML = SYMPTOMS.map((s, i) => {
+    const sel = state.selectedSymptoms.includes(s.id);
+    const color = SYMPTOM_COLORS[i % SYMPTOM_COLORS.length];
+    return `
+      <div class="clay-card symptom-card ${sel ? 'selected' : ''}"
+           style="border-color:${sel ? color : 'transparent'};color:${color};"
+           onclick="toggleSymptom('${s.id}', '${color}')">
+        <div class="check-badge">✓</div>
+        <span class="symptom-icon">${s.emoji}</span>
+        <h4 style="color:var(--text-dark)">${s.title}</h4>
+        <p>${s.desc}</p>
+      </div>`;
+  }).join('');
+  updatePillBar();
+}
+
+function toggleSymptom(id, color) {
+  const idx = state.selectedSymptoms.indexOf(id);
+  if (idx > -1) state.selectedSymptoms.splice(idx, 1);
+  else state.selectedSymptoms.push(id);
+  renderSymptoms();
+}
+
+function updatePillBar() {
+  const n = state.selectedSymptoms.length;
+  document.getElementById('symptomCount').textContent = n;
+  document.getElementById('step2Next').disabled = n === 0;
+}
+
+/* ── REVIEW ── */
+function renderReview() {
+  document.getElementById('reviewDevice').textContent = state.brand || '—';
+  document.getElementById('reviewModel').textContent = state.model || 'Model tidak diisi';
+
+  const pills = state.selectedSymptoms.map(id => {
+    const s = SYMPTOMS.find(x => x.id === id);
+    return s ? `<span class="review-symptom-pill">${s.emoji} ${s.title}</span>` : '';
+  }).join('');
+  document.getElementById('reviewSymptomPills').innerHTML = pills;
+}
+
+/* ── ANALYSIS ENGINE ── */
+function runAnalysis() {
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.classList.add('active');
+
+  setTimeout(() => {
+    const result = computeResult();
+    state.result = result;
+    renderResult(result);
+    overlay.classList.remove('active');
+    showStep(4);
+    updateProgress(4);
+    window.scrollTo(0, 0);
+  }, 2200);
+}
+
+function computeResult() {
+  const sel = state.selectedSymptoms;
+
+  // Score each condition
+  let best = null, bestScore = -1;
+  CONDITIONS.forEach(cond => {
+    let score = 0;
+    cond.techRules.forEach(rule => {
+      const match = rule.if.every(g => sel.includes(g));
+      if (match) score += rule.op === 'AND' ? 3 : 1;
+    });
+    if (score > bestScore) { bestScore = score; best = cond; }
+  });
+
+  // Fallback: match by any symptom overlap
+  if (!best || bestScore === 0) {
+    CONDITIONS.forEach(cond => {
+      const overlap = cond.techCodes.filter(c => sel.includes(c)).length;
+      if (overlap > bestScore) { bestScore = overlap; best = cond; }
+    });
+  }
+
+  return best || CONDITIONS[0];
+}
+
+function renderResult(r) {
+  document.getElementById('resultEmoji').textContent = r.emoji;
+  document.getElementById('resultTitle').textContent = r.name;
+  document.getElementById('matchBadge').textContent = `⬤ Kesesuaian ${r.match}`;
+  document.getElementById('resultExplanation').textContent = r.explanation;
+
+  document.getElementById('resultSymptoms').innerHTML = r.symptoms.map(s =>
+    `<div class="symptom-bullet">${s}</div>`
+  ).join('');
+
+  document.getElementById('resultSolutions').innerHTML = r.solutions.map((s, i) =>
+    `<li><span class="solution-num">${i+1}</span><span>${s}</span></li>`
+  ).join('');
+
+  // Technical accordion
+  document.getElementById('techCodes').innerHTML = r.techCodes.map(c =>
+    `<span class="tech-code">${c}</span>`
+  ).join('');
+
+  document.getElementById('techRules').innerHTML = r.techRules.map(rule =>
+    `<div class="rule-row">
+      <span>IF</span>
+      ${rule.if.map(g => `<span class="tech-code">${g}</span>`).join(
+        rule.op ? `<span style="color:var(--clay-orange);font-weight:800;">${rule.op}</span>` : ''
+      )}
+      <span class="rule-then">→ THEN ${rule.then}</span>
+    </div>`
+  ).join('');
+}
+
+function toggleAccordion() {
+  const body = document.getElementById('accordionBody');
+  const icon = document.getElementById('accordionIcon');
+  body.classList.toggle('open');
+  icon.classList.toggle('open');
+}
+
+/* ── ADMIN ── */
+const ADMIN_RULES = [
+  { id: 'R001', if: ['G02', 'G03'], op: 'AND', then: 'K01', match: '97%', status: 'Aktif' },
+  { id: 'R002', if: ['G01', 'G04'], op: 'AND', then: 'K02', match: '94%', status: 'Aktif' },
+  { id: 'R003', if: ['G01', 'G05'], op: 'AND', then: 'K02', match: '88%', status: 'Aktif' },
+  { id: 'R004', if: ['G06'],        op: '',    then: 'K03', match: '91%', status: 'Aktif' },
+  { id: 'R005', if: ['G02'],        op: '',    then: 'K01', match: '72%', status: 'Aktif' },
+  { id: 'R006', if: ['G01'],        op: '',    then: 'K02', match: '65%', status: 'Aktif' },
+  { id: 'R007', if: ['G07'],        op: '',    then: 'K04', match: '89%', status: 'Aktif' },
+  { id: 'R008', if: ['G08'],        op: '',    then: 'K05', match: '93%', status: 'Aktif' },
+  { id: 'R009', if: ['G04', 'G05'], op: 'AND', then: 'K02', match: '96%', status: 'Aktif' },
+  { id: 'R010', if: ['G02', 'G05'], op: 'AND', then: 'K06', match: '82%', status: 'Draft' },
+];
+
+const ADMIN_SYMPTOMS = [
+  { id: 'G01', name: 'Baterai Cepat Habis',     desc: 'Daya baterai menurun cepat',    cat: 'Daya' },
+  { id: 'G02', name: 'Layar Tidak Merespons',    desc: 'Layar tidak bereaksi saat disentuh', cat: 'Layar' },
+  { id: 'G03', name: 'Layar Gerak Sendiri',      desc: 'Gerakan layar tanpa input',     cat: 'Layar' },
+  { id: 'G04', name: 'Tidak Bisa Isi Daya',      desc: 'Port/pengisian tidak berfungsi', cat: 'Daya' },
+  { id: 'G05', name: 'HP Cepat Panas',           desc: 'Suhu abnormal saat digunakan',  cat: 'Suhu' },
+  { id: 'G06', name: 'Sinyal Sering Hilang',     desc: 'Koneksi seluler tidak stabil',  cat: 'Jaringan' },
+  { id: 'G07', name: 'Suara Tidak Keluar',       desc: 'Speaker tidak berfungsi',       cat: 'Audio' },
+  { id: 'G08', name: 'Kamera Bermasalah',        desc: 'Foto buram atau kamera error',  cat: 'Kamera' },
+];
+
+const ADMIN_CONDITIONS = [
+  { id: 'K01', name: 'Kerusakan Touchscreen', severity: 'Sedang', cost: 'Rp 150rb–500rb' },
+  { id: 'K02', name: 'Masalah Baterai & Daya', severity: 'Ringan', cost: 'Rp 80rb–200rb' },
+  { id: 'K03', name: 'Gangguan Modul Jaringan', severity: 'Sedang', cost: 'Rp 200rb–600rb' },
+  { id: 'K04', name: 'Speaker/Earpiece Rusak', severity: 'Sedang', cost: 'Rp 100rb–300rb' },
+  { id: 'K05', name: 'Modul Kamera Bermasalah', severity: 'Berat', cost: 'Rp 300rb–1.2jt' },
+  { id: 'K06', name: 'IC Power / Overheat', severity: 'Berat', cost: 'Rp 350rb–800rb' },
+];
+
+function renderAdminTables() {
+  // Rules
+  document.getElementById('rulesTableBody').innerHTML = ADMIN_RULES.map(r => `
+    <tr>
+      <td><span class="tag tag-gray">${r.id}</span></td>
+      <td>
+        ${r.if.map(g => `<span class="tag tag-blue">${g}</span>`).join(
+          r.op ? `<span style="font-size:.75rem;font-weight:700;color:#6B7280;margin:0 3px;">${r.op}</span>` : ''
+        )}
+      </td>
+      <td><span class="tag tag-green">${r.then}</span></td>
+      <td><strong>${r.match}</strong></td>
+      <td><span class="tag ${r.status === 'Aktif' ? 'tag-green' : 'tag-orange'}">${r.status}</span></td>
+      <td style="white-space:nowrap">
+        <button class="action-btn action-edit">Edit</button>
+        <button class="action-btn action-delete" style="margin-left:4px">Hapus</button>
+      </td>
+    </tr>
+  `).join('');
+
+  // Symptoms
+  const catColors = { 'Daya':'tag-orange','Layar':'tag-blue','Suhu':'tag-red','Jaringan':'tag-green','Audio':'tag-gray','Kamera':'tag-blue' };
+  document.getElementById('symptomsTableBody').innerHTML = ADMIN_SYMPTOMS.map(s => `
+    <tr>
+      <td><span class="tag tag-blue">${s.id}</span></td>
+      <td><strong>${s.name}</strong></td>
+      <td style="color:#6B7280">${s.desc}</td>
+      <td><span class="tag ${catColors[s.cat]||'tag-gray'}">${s.cat}</span></td>
+      <td>
+        <button class="action-btn action-edit">Edit</button>
+        <button class="action-btn action-delete" style="margin-left:4px">Hapus</button>
+      </td>
+    </tr>
+  `).join('');
+
+  // Conditions
+  const sevColors = { 'Ringan':'tag-green','Sedang':'tag-orange','Berat':'tag-red' };
+  document.getElementById('conditionsTableBody').innerHTML = ADMIN_CONDITIONS.map(c => `
+    <tr>
+      <td><span class="tag tag-green">${c.id}</span></td>
+      <td><strong>${c.name}</strong></td>
+      <td><span class="tag ${sevColors[c.severity]||'tag-gray'}">${c.severity}</span></td>
+      <td>${c.cost}</td>
+      <td>
+        <button class="action-btn action-edit">Edit</button>
+        <button class="action-btn action-delete" style="margin-left:4px">Hapus</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function adminTab(tab, btn) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  ['rules','symptoms','conditions'].forEach(t => {
+    const el = document.getElementById('admin-' + t);
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+function showAddRule() {
+  alert('Fitur tambah aturan akan tersedia di versi berikutnya.');
+}
+
+/* ── MOBILE DRAWER ── */
+function openDrawer() {
+  const overlay = document.getElementById('mobileDrawer');
+  const btn = document.getElementById('hamburgerBtn');
+  overlay.style.display = 'block';
+  // Force reflow so transition fires
+  overlay.getBoundingClientRect();
+  overlay.classList.add('open');
+  btn.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDrawer() {
+  const overlay = document.getElementById('mobileDrawer');
+  const btn = document.getElementById('hamburgerBtn');
+  overlay.classList.remove('open');
+  btn.classList.remove('open');
+  document.body.style.overflow = '';
+  // Hide after transition
+  setTimeout(() => { if (!overlay.classList.contains('open')) overlay.style.display = 'none'; }, 380);
+}
+
+function closeDrawerOnBackdrop(e) {
+  // Close only if click is on the overlay itself, not the drawer panel
+  if (e.target === document.getElementById('mobileDrawer')) closeDrawer();
+}
+
+function drawerNav(dest) {
+  closeDrawer();
+  setTimeout(() => {
+    if (dest === 'diag') startDiag();
+    else goTo(dest);
+  }, 200);
+}
+
+// Close drawer on Escape key
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+/* ── SCROLL ANIMATIONS ── */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+/* ── TESTIMONIAL DRAG SCROLL ── */
+const track = document.getElementById('testimonialTrack');
+let isDragging = false, startX, scrollLeft;
+track.addEventListener('mousedown', e => {
+  isDragging = true; startX = e.pageX - track.offsetLeft; scrollLeft = track.scrollLeft;
+  track.style.cursor = 'grabbing';
+});
+track.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  track.scrollLeft = scrollLeft - (e.pageX - track.offsetLeft - startX);
+});
+['mouseup','mouseleave'].forEach(ev => track.addEventListener(ev, () => {
+  isDragging = false; track.style.cursor = 'grab';
+}));
+
+/* ── INIT ── */
+renderBrands();
+renderSymptoms();
+renderAdminTables();
+</script>
+</body>
+</html>
