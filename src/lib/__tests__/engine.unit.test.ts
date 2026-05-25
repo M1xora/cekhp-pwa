@@ -1,5 +1,5 @@
 // src/lib/__tests__/engine.unit.test.ts
-// Unit tests for the Forward Chaining Inference Engine
+// Unit tests untuk Forward Chaining Inference Engine — Full-Match
 
 import { describe, it, expect } from 'vitest';
 import { runInference } from '../engine';
@@ -19,91 +19,154 @@ const makeRule = (id: string, conditionId: string, symptomIds: string[]): Rule =
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('runInference — Inference Engine unit tests', () => {
-  // Requirement 6.7 — empty activeFacts
+describe('runInference — Full-Match Forward Chaining', () => {
+
+  // ── Input kosong ──────────────────────────────────────────────────────────
+
   it('returns [] when activeFacts is empty', () => {
-    const rules: Rule[] = [
-      makeRule('rule-01', 'cond-a', ['sym-1', 'sym-2']),
-    ];
-
-    const result = runInference([], rules);
-
-    expect(result).toEqual([]);
+    const rules: Rule[] = [makeRule('r01', 'cond-a', ['sym-1', 'sym-2'])];
+    expect(runInference([], rules)).toEqual([]);
   });
 
-  // Requirement 6.7 — empty rules
   it('returns [] when rules array is empty', () => {
-    const result = runInference(['sym-1', 'sym-2'], []);
-
-    expect(result).toEqual([]);
+    expect(runInference(['sym-1', 'sym-2'], [])).toEqual([]);
   });
 
-  // Requirement 6.3 / 6.4 — all symptoms matched → score 1.0
-  it('returns confidenceScore 1.0 when all rule symptoms are present in activeFacts', () => {
+  // ── Full match ────────────────────────────────────────────────────────────
+
+  it('returns result when ALL rule symptoms are present in activeFacts', () => {
+    const rules: Rule[] = [makeRule('r01', 'cond-a', ['sym-1', 'sym-2', 'sym-3'])];
+    const results = runInference(['sym-1', 'sym-2', 'sym-3'], rules);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].conditionId).toBe('cond-a');
+    expect(results[0].matchedRuleId).toBe('r01');
+    expect(results[0].confidenceScore).toBe(1.0);
+    expect(results[0].matchedSymptomIds).toEqual(['sym-1', 'sym-2', 'sym-3']);
+  });
+
+  it('returns result when activeFacts contains MORE than required symptoms (superset)', () => {
+    const rules: Rule[] = [makeRule('r01', 'cond-a', ['sym-1', 'sym-2'])];
+    // activeFacts mengandung gejala tambahan selain yang dibutuhkan rule
+    const results = runInference(['sym-1', 'sym-2', 'sym-extra'], rules);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].conditionId).toBe('cond-a');
+  });
+
+  // ── Partial match TIDAK boleh muncul ──────────────────────────────────────
+
+  it('returns [] when only SOME (not all) symptoms are matched — partial match excluded', () => {
+    const rules: Rule[] = [makeRule('r01', 'cond-a', ['sym-1', 'sym-2', 'sym-3'])];
+    const activeFacts = ['sym-1', 'sym-2']; // hanya 2 dari 3
+
+    const results = runInference(activeFacts, rules);
+    expect(results).toHaveLength(0);
+  });
+
+  it('returns [] when only ONE of THREE symptoms is matched', () => {
+    const rules: Rule[] = [makeRule('r01', 'cond-a', ['sym-1', 'sym-2', 'sym-3'])];
+    const results = runInference(['sym-1'], rules);
+    expect(results).toHaveLength(0);
+  });
+
+  it('returns [] when NO symptoms are matched', () => {
+    const rules: Rule[] = [makeRule('r01', 'cond-a', ['sym-1', 'sym-2'])];
+    const results = runInference(['sym-99', 'sym-100'], rules);
+    expect(results).toHaveLength(0);
+  });
+
+  // ── Duplikat activeFacts ──────────────────────────────────────────────────
+
+  it('handles duplicate activeFacts correctly (Set deduplication)', () => {
+    const rules: Rule[] = [makeRule('r01', 'cond-a', ['fact-a', 'fact-b'])];
+    // fact-a muncul dua kali — harus tetap dianggap full match
+    const results = runInference(['fact-a', 'fact-a', 'fact-b'], rules);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].confidenceScore).toBe(1.0);
+  });
+
+  // ── Rule dengan symptomIds kosong ─────────────────────────────────────────
+
+  it('skips a rule whose symptomIds array is empty', () => {
     const rules: Rule[] = [
-      makeRule('rule-01', 'cond-a', ['sym-1', 'sym-2', 'sym-3']),
+      makeRule('r-empty', 'cond-empty', []),        // harus dilewati
+      makeRule('r-valid', 'cond-valid', ['sym-1']), // harus masuk
+    ];
+    const results = runInference(['sym-1'], rules);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].conditionId).toBe('cond-valid');
+  });
+
+  // ── Multiple rules match ──────────────────────────────────────────────────
+
+  it('returns ALL matched rules when multiple rules are fully satisfied', () => {
+    const rules: Rule[] = [
+      makeRule('r01', 'cond-a', ['sym-1', 'sym-2']),
+      makeRule('r02', 'cond-b', ['sym-2', 'sym-3']),
+      makeRule('r03', 'cond-c', ['sym-1', 'sym-4']), // sym-4 tidak ada → tidak match
     ];
     const activeFacts = ['sym-1', 'sym-2', 'sym-3'];
 
     const results = runInference(activeFacts, rules);
 
-    expect(results).toHaveLength(1);
-    expect(results[0].conditionId).toBe('cond-a');
-    expect(results[0].confidenceScore).toBe(1.0);
+    expect(results).toHaveLength(2);
+    const conditionIds = results.map((r) => r.conditionId);
+    expect(conditionIds).toContain('cond-a');
+    expect(conditionIds).toContain('cond-b');
+    expect(conditionIds).not.toContain('cond-c');
   });
 
-  // Requirement 6.6 — no symptoms matched → result excluded
-  it('excludes a rule from results when no symptoms are matched', () => {
+  // ── Urutan: rule paling spesifik (gejala terbanyak) lebih dulu ───────────
+
+  it('sorts results by number of matched symptoms descending (most specific first)', () => {
     const rules: Rule[] = [
-      makeRule('rule-01', 'cond-a', ['sym-1', 'sym-2']),
+      makeRule('r01', 'cond-a', ['s1', 's2']),          // 2 gejala
+      makeRule('r02', 'cond-b', ['s1', 's2', 's3']),    // 3 gejala — lebih spesifik
     ];
-    const activeFacts = ['sym-99', 'sym-100']; // none of the rule's symptoms
+    const activeFacts = ['s1', 's2', 's3'];
 
     const results = runInference(activeFacts, rules);
 
-    expect(results).toHaveLength(0);
+    expect(results).toHaveLength(2);
+    // r02 (3 gejala) harus muncul lebih dulu
+    expect(results[0].matchedRuleId).toBe('r02');
+    expect(results[1].matchedRuleId).toBe('r01');
   });
 
-  // Requirement 6.3 — partial match → correct fractional score (2/3 ≈ 0.6667)
-  it('returns the correct fractional confidenceScore for a partial match', () => {
+  it('breaks ties in specificity by rule.id ascending', () => {
     const rules: Rule[] = [
-      makeRule('rule-01', 'cond-a', ['sym-1', 'sym-2', 'sym-3']),
+      makeRule('r-z', 'cond-z', ['s1', 's2']), // 2 gejala, id "r-z"
+      makeRule('r-a', 'cond-a', ['s1', 's2']), // 2 gejala, id "r-a" — harus lebih dulu
     ];
-    const activeFacts = ['sym-1', 'sym-2']; // 2 out of 3 matched
+    const activeFacts = ['s1', 's2'];
 
     const results = runInference(activeFacts, rules);
 
-    expect(results).toHaveLength(1);
-    expect(results[0].confidenceScore).toBeCloseTo(2 / 3, 10);
+    expect(results).toHaveLength(2);
+    expect(results[0].matchedRuleId).toBe('r-a'); // ascending
+    expect(results[1].matchedRuleId).toBe('r-z');
   });
 
-  // Requirement 6.2 — duplicate activeFacts must not inflate score
-  it('does not inflate confidenceScore when activeFacts contains duplicates', () => {
-    const rules: Rule[] = [
-      makeRule('rule-01', 'cond-a', ['fact-a', 'fact-b']),
-    ];
-    // fact-a appears twice — score should still be 2/2 = 1.0, not higher
-    const activeFacts = ['fact-a', 'fact-a', 'fact-b'];
+  // ── inferenceLog ──────────────────────────────────────────────────────────
 
-    const results = runInference(activeFacts, rules);
+  it('inferenceLog contains the rule id and symptom match status', () => {
+    const rules: Rule[] = [makeRule('r01', 'cond-a', ['sym-1', 'sym-2'])];
+    const results = runInference(['sym-1', 'sym-2'], rules);
 
-    expect(results).toHaveLength(1);
-    expect(results[0].confidenceScore).toBe(1.0);
+    expect(results[0].inferenceLog).toHaveLength(1);
+    expect(results[0].inferenceLog[0]).toContain('r01');
+    expect(results[0].inferenceLog[0]).toContain('terpenuhi');
   });
 
-  // Requirement 6.8 — rule with empty symptomIds is skipped
-  it('skips a rule whose symptomIds array is empty', () => {
-    const rules: Rule[] = [
-      makeRule('rule-empty', 'cond-empty', []),           // must be skipped
-      makeRule('rule-valid', 'cond-valid', ['sym-1']),    // must be included
-    ];
-    const activeFacts = ['sym-1'];
+  // ── matchedSymptomIds ─────────────────────────────────────────────────────
 
-    const results = runInference(activeFacts, rules);
+  it('matchedSymptomIds contains all symptomIds from the rule', () => {
+    const rules: Rule[] = [makeRule('r01', 'cond-a', ['s1', 's2', 's3'])];
+    const results = runInference(['s1', 's2', 's3'], rules);
 
-    // Only the valid rule should appear; the empty-symptomIds rule is skipped
-    expect(results).toHaveLength(1);
-    expect(results[0].conditionId).toBe('cond-valid');
-    expect(results[0].confidenceScore).toBe(1.0);
+    expect(results[0].matchedSymptomIds).toEqual(['s1', 's2', 's3']);
   });
 });

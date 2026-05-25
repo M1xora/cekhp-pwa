@@ -1,102 +1,103 @@
 // src/lib/engine.ts
-// Forward Chaining Inference Engine — pure domain logic, no React/Zustand/Supabase imports
+// Forward Chaining Inference Engine — Full-Match
+// Pure domain logic: tidak ada import React, Zustand, atau Supabase.
+//
+// Metode: Forward Chaining murni berbasis full-match rule.
+//
+// Aturan:
+//   - Fakta awal = gejala yang dipilih pengguna (activeFacts).
+//   - Sebuah rule HANYA dianggap TERPENUHI jika SEMUA symptomIds pada
+//     bagian IF ada di dalam activeFacts (AND-logic penuh).
+//   - Partial match TIDAK menghasilkan diagnosa.
+//   - Jika lebih dari satu rule terpenuhi, semua ditampilkan.
+//   - Urutan hasil: rule dengan jumlah gejala terbanyak lebih dulu
+//     (rule paling spesifik); ties dipecah secara ascending berdasarkan rule.id.
+//   - Jika tidak ada rule yang terpenuhi, kembalikan array kosong.
 
 import type { Rule, DiagnosisResult } from '../types/knowledge-base';
 
-/** Internal record used only during scoring — carries rule.id for tie-breaking sort */
-interface ScoredResult {
-  ruleId: string;
-  result: DiagnosisResult;
-}
-
 /**
- * Runs the Forward Chaining inference algorithm against the provided active facts and rules.
+ * Menjalankan algoritma Forward Chaining full-match.
  *
- * Complexity analysis (Issue 1.1 / 1.2 / 1.3 — all resolved):
+ * Kompleksitas: O(F + R×S + R log R)
+ *   - F = panjang activeFacts
+ *   - R = jumlah rules
+ *   - S = rata-rata panjang symptomIds per rule
  *
- *   1. deduplicatedFacts = Set(activeFacts)           → O(F)
- *   2. for each rule R:
- *        matched count via Set.has()                  → O(S) with O(1) per lookup
- *        log lines collected into array, joined once  → O(S)  — no += in loop (Issue 1.3)
- *   3. sort results                                   → O(R log R)
- *
- *   TOTAL: O(F + R×S + R log R)
- *
- *   At 1,000 rules × 500 symptoms → ~500,000 hash-table lookups.
- *   All lookups are O(1) via Set.has(); no O(n) array.includes() anywhere (Issue 1.2 fix).
- *
- * @param activeFacts - Array of symptom IDs the user has confirmed (may contain duplicates)
- * @param rules       - Array of Rule objects from the Knowledge Base
- * @returns           - Array of DiagnosisResult objects with confidenceScore > 0,
- *                      sorted descending by confidenceScore; ties broken ascending by rule.id
+ * @param activeFacts - Array symptom ID yang dipilih pengguna (boleh duplikat)
+ * @param rules       - Array Rule dari Knowledge Base
+ * @returns           - Array DiagnosisResult untuk rule yang TERPENUHI PENUH,
+ *                      diurutkan descending berdasarkan jumlah gejala (paling
+ *                      spesifik lebih dulu); ties ascending berdasarkan rule.id
  */
 export function runInference(activeFacts: string[], rules: Rule[]): DiagnosisResult[] {
-  // Requirement 6.7 — return early if either input is empty
+  // Return awal jika input kosong
   if (activeFacts.length === 0 || rules.length === 0) {
     return [];
   }
 
-  // Requirement 6.2 — de-duplicate facts in O(F) using a Set for O(1) membership tests
+  // Deduplikasi fakta dengan Set untuk O(1) membership test
   const factSet = new Set(activeFacts);
 
-  const scored: ScoredResult[] = [];
+  const matched: DiagnosisResult[] = [];
 
   for (const rule of rules) {
-    // Requirement 6.8 — skip rules with empty symptomIds (avoid division by zero)
+    // Skip rule dengan symptomIds kosong
     if (rule.symptomIds.length === 0) {
       continue;
     }
 
     const total = rule.symptomIds.length;
 
-    // FIX 1.2 / 2.1 — O(1) Set.has() replaces any array-level scan.
-    // Count matched symptoms and collect per-symptom status strings in one pass.
-    let matched = 0;
-
-    // FIX 1.3 — Build log lines into an array; join once at the end (no += string growth).
+    // Bangun log inferensi per-gejala
     const logLines: string[] = [];
+    let allMatched = true;
 
     for (const symptomId of rule.symptomIds) {
       if (factSet.has(symptomId)) {
-        matched++;
-        logLines.push(`  ${symptomId} — ✓ matched`);
+        logLines.push(`  ${symptomId} — ✓ terpenuhi`);
       } else {
-        logLines.push(`  ${symptomId} — ✗ missing`);
+        logLines.push(`  ${symptomId} — ✗ tidak dipilih`);
+        allMatched = false;
       }
     }
 
-    // Requirement 6.3 — confidenceScore = matchedCount / total
-    const score = matched / total;
+    // Full-match: HANYA masukkan rule jika SEMUA gejala IF terpenuhi
+    if (!allMatched) {
+      continue;
+    }
 
-    // Requirement 6.4 — build the inference log entry
-    const scoreFormatted = score.toFixed(2);
-    const logHeader = `Checked ${rule.id}: matched ${matched}/${total} symptoms → score ${scoreFormatted}`;
-    // Join header + per-symptom lines in a single string concat (O(S) total, not O(S²))
+    // Bangun log header
+    const logHeader = `Rule ${rule.id} (${rule.code ?? rule.id}): semua ${total} gejala terpenuhi → COCOK`;
     const logEntry = [logHeader, ...logLines].join('\n');
 
-    // Requirement 6.6 — exclude results with confidenceScore === 0
-    if (score > 0) {
-      scored.push({
-        ruleId: rule.id,
-        result: {
-          conditionId: rule.conditionId,
-          // conditionName is intentionally set to conditionId here;
-          // consumers (Step4Results) enrich it via a pre-built Map lookup (Issue 1.2).
-          conditionName: rule.conditionId,
-          confidenceScore: score,
-          inferenceLog: [logEntry],
-        },
-      });
-    }
+    matched.push({
+      conditionId: rule.conditionId,
+      // Field berikut akan diisi oleh diagnosisService saat enrichment
+      conditionCode: '',
+      conditionName: rule.conditionId,
+      description: '',
+      recommendedAction: '',
+      matchedRuleId: rule.id,
+      matchedRuleCode: rule.code ?? rule.id,
+      matchedSymptomIds: [...rule.symptomIds],
+      matchedSymptomCodes: [], // diisi oleh diagnosisService saat enrichment
+      inferenceLog: [logEntry],
+      // confidenceScore selalu 1.0 untuk full-match — dipertahankan untuk kompatibilitas
+      confidenceScore: 1.0,
+    });
   }
 
-  // Requirement 6.5 — sort descending by confidenceScore; ties broken ascending by rule.id
-  scored.sort((a, b) => {
-    if (b.result.confidenceScore !== a.result.confidenceScore) {
-      return b.result.confidenceScore - a.result.confidenceScore;
+  // Urutkan: rule paling spesifik (symptomIds terbanyak) lebih dulu
+  // Ties dipecah ascending berdasarkan matchedRuleId
+  matched.sort((a, b) => {
+    const aLen = a.matchedSymptomIds.length;
+    const bLen = b.matchedSymptomIds.length;
+    if (bLen !== aLen) {
+      return bLen - aLen; // lebih banyak gejala = lebih spesifik = muncul lebih dulu
     }
-    return a.ruleId.localeCompare(b.ruleId);
+    return a.matchedRuleId.localeCompare(b.matchedRuleId);
   });
 
-  return scored.map((s) => s.result);
+  return matched;
 }

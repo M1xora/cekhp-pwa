@@ -1,13 +1,13 @@
 import ClayCard from '../../components/ui/ClayCard';
 import { useDiagnosaStore } from '../../store/useDiagnosaStore';
 
-// Device category options — exactly 5 as specified
+// Device category options — 5 merek smartphone produksi Cina
 const DEVICE_CATEGORIES = [
-  { id: 'samsung',        name: 'Samsung',        icon: '📱' },
-  { id: 'iphone',         name: 'iPhone',         icon: '🍎' },
-  { id: 'xiaomi',         name: 'Xiaomi',         icon: '📱' },
-  { id: 'oppo',           name: 'OPPO',           icon: '📱' },
-  { id: 'android-general', name: 'General Android', icon: '🤖' },
+  { id: 'xiaomi',  name: 'Xiaomi',  icon: '📱' },
+  { id: 'oppo',    name: 'OPPO',    icon: '📱' },
+  { id: 'infinix', name: 'Infinix', icon: '📱' },
+  { id: 'vivo',    name: 'Vivo',    icon: '📱' },
+  { id: 'realme',  name: 'Realme',  icon: '📱' },
 ] as const;
 
 interface Step1Props {
@@ -38,10 +38,13 @@ export default function Step1DeviceCategory({ onNext }: Step1Props) {
       {/* Heading */}
       <div>
         <h2 className="text-2xl font-display font-bold text-gray-900">
-          Pilih Kategori Perangkat
+          Pilih Merek Smartphone
         </h2>
         <p className="mt-1 text-gray-600 text-sm">
-          Pilih merek atau jenis smartphone Anda untuk memulai diagnosis.
+          Pilih merek smartphone Anda untuk memulai diagnosis.
+        </p>
+        <p className="mt-1 text-gray-500 text-xs">
+          Merek hanya digunakan sebagai identitas perangkat. Hasil diagnosa ditentukan berdasarkan gejala yang dipilih.
         </p>
       </div>
 

@@ -29,14 +29,14 @@ export default function LoginForm() {
     let valid = true;
 
     if (!email.trim()) {
-      setEmailError('Email is required.');
+      setEmailError('Email tidak boleh kosong.');
       valid = false;
     } else {
       setEmailError('');
     }
 
     if (!password) {
-      setPasswordError('Password is required.');
+      setPasswordError('Kata sandi tidak boleh kosong.');
       valid = false;
     } else {
       setPasswordError('');
@@ -59,13 +59,13 @@ export default function LoginForm() {
 
       if (error) {
         // Display toast; stay on /login (Req 9.7)
-        setAuthError(error.message ?? 'Authentication failed. Please try again.');
+        setAuthError(error.message ?? 'Login gagal. Silakan coba lagi.');
       } else {
         // Success — redirect to admin (Req 9.2)
         navigate('/admin', { replace: true });
       }
     } catch {
-      setAuthError('An unexpected error occurred. Please check your connection and try again.');
+      setAuthError('Terjadi kesalahan. Periksa koneksi internet Anda dan coba lagi.');
     } finally {
       setIsLoading(false);
     }
@@ -81,10 +81,10 @@ export default function LoginForm() {
     /* Claymorphism card container */
     <div className="clay-card w-full max-w-md mx-auto p-8">
       <h1 className="text-2xl font-bold font-display text-gray-900 mb-1">
-        Admin Login
+        Login Admin
       </h1>
       <p className="text-sm text-gray-600 mb-6">
-        Sign in to manage the CekHP Knowledge Base.
+        Masuk untuk mengelola Basis Pengetahuan CekHP.
       </p>
 
       {/* ── Auth error toast ────────────────────────────────────────────────── */}
@@ -96,7 +96,7 @@ export default function LoginForm() {
           <span className="flex-1">{authError}</span>
           <button
             type="button"
-            aria-label="Dismiss error"
+            aria-label="Tutup notifikasi error"
             onClick={dismissAuthError}
             className="shrink-0 text-red-400 hover:text-red-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1 rounded"
           >
@@ -115,7 +115,7 @@ export default function LoginForm() {
             htmlFor="email"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            Email address
+            Alamat Email
           </label>
           <input
             id="email"
@@ -152,7 +152,7 @@ export default function LoginForm() {
             htmlFor="password"
             className="block text-sm font-medium text-gray-700 mb-1"
           >
-            Password
+            Kata Sandi
           </label>
           <input
             id="password"
@@ -188,7 +188,7 @@ export default function LoginForm() {
           type="submit"
           disabled={isLoading}
           className="clay-btn w-full"
-          aria-label={isLoading ? 'Signing in…' : 'Sign in'}
+          aria-label={isLoading ? 'Sedang masuk…' : 'Masuk'}
         >
           {isLoading ? (
             <>
@@ -214,10 +214,10 @@ export default function LoginForm() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                 />
               </svg>
-              Signing in…
+              Sedang masuk…
             </>
           ) : (
-            'Sign in'
+            'Masuk'
           )}
         </button>
       </form>

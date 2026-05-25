@@ -1,89 +1,76 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { runInference } from '../../lib/engine';
-import { mockRules, mockConditions } from '../../data/mockData';
+import { runDiagnosis } from '../../services/diagnosisService';
 import { useDiagnosaStore } from '../../store/useDiagnosaStore';
 import { ClayCard } from '../../components/ui/ClayCard';
 import type { DiagnosisResult } from '../../types/knowledge-base';
-import type { Condition } from '../../types/knowledge-base';
 
 interface Step4Props {
   onReset: () => void;
 }
 
+type LoadState = 'loading' | 'ready' | 'error';
+
 /**
- * Step4Results — Diagnostic Wizard Results View.
+ * Step4Results — Halaman Hasil Diagnosa.
  *
- * Performance & correctness optimisations applied (Audit Issues 1.2, 3.1, 3.3, 3.4):
- *
- *   FIX 1.2 / 3.3 — `conditionMap` is a `Map<string, Condition>` built with `useMemo`
- *     keyed on the stable `mockConditions` reference.  Every lookup is O(1) instead of
- *     the previous O(C) linear `.find()` scan that ran per result, per render.
- *
- *   FIX 3.1 — Stale closure eliminated.  Previously `activeFacts` was captured via
- *     closure inside `useEffect([], [])`.  In React StrictMode the component unmounts
- *     and remounts, so the closure captured the initial (empty) snapshot of `activeFacts`.
- *     Now we read activeFacts directly from the store via `getState()` at call time,
- *     then derive results synchronously with `useMemo`.  This is safe because:
- *       a) The wizard always navigates to Step4 after the facts are committed to the store.
- *       b) `activeFacts` in the store is stable for the lifetime of Step4.
- *       c) No async side-effect is needed — the inference engine is a pure function.
- *
- *   FIX 3.4 — Dual state (store copy + local component state) removed.
- *     Results are derived once via useMemo and stored only once in the Zustand store.
- *     The local `useState` mirror is gone.  Step4 renders from the memoised value directly.
- *
- * Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8
+ * Fase 5: Engine diubah ke full-match Forward Chaining.
+ * Hanya rule yang SEMUA gejalanya terpenuhi yang ditampilkan.
+ * Partial match tidak ditampilkan.
+ * Setiap kartu hasil menampilkan: jenis kerusakan, rule yang terpenuhi,
+ * gejala IF, penjelasan, solusi awal, log inferensi, dan disclaimer.
  */
 const Step4Results: React.FC<Step4Props> = ({ onReset }) => {
-  // FIX 3.1 — Read activeFacts from the store at render time (not via stale closure).
-  // We subscribe to the slice so re-renders happen if activeFacts ever changes while
-  // this component is mounted (defensive, since it shouldn't in normal wizard flow).
   const activeFacts = useDiagnosaStore((state) => state.activeFacts);
   const setResults = useDiagnosaStore((state) => state.setResults);
   const resetStore = useDiagnosaStore((state) => state.resetStore);
+  const selectedDeviceCategory = useDiagnosaStore((state) => state.selectedDeviceCategory);
 
-  // FIX 1.2 / 3.3 — Build a Map<conditionId, Condition> once for O(1) lookups.
-  // mockConditions is a module-level constant so this memo only ever runs once.
-  const conditionMap = useMemo<Map<string, Condition>>(
-    () => new Map(mockConditions.map((c) => [c.id, c])),
-    [], // mockConditions is a stable import — no re-builds needed
-  );
+  const [loadState, setLoadState] = useState<LoadState>('loading');
+  const [results, setLocalResults] = useState<DiagnosisResult[]>([]);
+  const [diagnosisError, setDiagnosisError] = useState<string | null>(null);
+  // symptomMap untuk menampilkan "G01 — Nama Gejala" di ringkasan input
+  const [symptomMap, setSymptomMap] = useState<Map<string, import('../../types/knowledge-base').Symptom>>(new Map());
 
-  // FIX 3.1 / 3.4 — Derive enriched results with useMemo.
-  // - Replaces the useEffect + useState(localResults) pattern.
-  // - Inference runs synchronously (pure function, O(F + R×S + R log R)).
-  // - conditionName enrichment now uses O(1) Map.get() instead of O(C) .find().
-  // - setResults is called during memo to keep the store in sync (write-through cache).
-  const results = useMemo<DiagnosisResult[]>(() => {
-    const rawResults = runInference(activeFacts, mockRules);
+  useEffect(() => {
+    let cancelled = false;
 
-    const enriched: DiagnosisResult[] = rawResults.map((r) => ({
-      ...r,
-      conditionName: conditionMap.get(r.conditionId)?.name ?? r.conditionId,
-    }));
+    async function diagnose() {
+      setLoadState('loading');
+      setDiagnosisError(null);
 
-    // Keep Zustand store in sync (FIX 3.4: single source of truth — memo owns the value,
-    // store is a write-through cache for any external consumers).
-    // We call setResults outside the render phase by deferring to a microtask to avoid
-    // "setState during render" React warnings.
-    Promise.resolve().then(() => setResults(enriched));
+      const { results: enriched, error, symptomMap: sMap } = await runDiagnosis(activeFacts);
 
-    return enriched;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFacts, conditionMap]);
-  // Note: setResults is intentionally omitted from deps — it's a stable Zustand action
-  // reference that never changes, and including it would cause an unnecessary extra run.
+      if (cancelled) return;
 
-  // ── Derived values (no local state needed) ─────────────────────────────────
-  const hasResults = results.length > 0 && results.some((r) => r.confidenceScore > 0);
+      if (error) {
+        setDiagnosisError(error);
+        setLoadState('error');
+        return;
+      }
 
-  const pageTitle = hasResults
-    ? `${results[0].conditionName} — CekHP`
-    : 'Diagnosis Selesai — CekHP';
+      setLocalResults(enriched);
+      setResults(enriched);
+      setSymptomMap(sMap);
+      setLoadState('ready');
+    }
 
-  // ── Reset handler ──────────────────────────────────────────────────────────
-  const [resetError, setResetError] = React.useState<string | null>(null);
+    diagnose();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const hasResults = useMemo(() => results.length > 0, [results]);
+
+  const pageTitle = useMemo(() => {
+    if (loadState === 'loading') return 'Menganalisis — CekHP';
+    if (loadState === 'error') return 'Diagnosis Gagal — CekHP';
+    return hasResults
+      ? `${results[0].conditionName} — CekHP`
+      : 'Diagnosis Selesai — CekHP';
+  }, [loadState, hasResults, results]);
+
+  const [resetError, setResetError] = useState<string | null>(null);
 
   const handleDiagnoseAgain = () => {
     setResetError(null);
@@ -112,115 +99,187 @@ const Step4Results: React.FC<Step4Props> = ({ onReset }) => {
           </p>
         </div>
 
-        {/* Error toast (shown when resetStore throws) */}
+        {/* Error toast reset */}
         {resetError && (
-          <div
-            role="alert"
-            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl"
-          >
-            <strong className="font-semibold">Gagal mereset: </strong>
-            {resetError}
+          <div role="alert" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl">
+            <strong className="font-semibold">Gagal mereset: </strong>{resetError}
           </div>
         )}
 
-        {/* Results list or fallback */}
-        {hasResults ? (
-          <ul className="space-y-6 list-none p-0">
-            {results.map((result, index) => {
-              // FIX 3.3 — O(1) Map.get() replaces O(C) .find() per render
-              const meta = conditionMap.get(result.conditionId);
-              const percentScore = Math.round(result.confidenceScore * 100);
+        {/* ── Loading ────────────────────────────────────────────────────── */}
+        {loadState === 'loading' && (
+          <div className="space-y-4" aria-busy="true" aria-label="Sedang menganalisis gejala">
+            {[1, 2].map((i) => (
+              <div key={i} className="rounded-xl border border-gray-200 bg-gray-50 p-5 animate-pulse" aria-hidden="true">
+                <div className="flex justify-between mb-3">
+                  <div className="h-5 w-1/3 rounded bg-gray-300" />
+                  <div className="h-5 w-16 rounded-full bg-gray-200" />
+                </div>
+                <div className="h-3 w-full rounded bg-gray-200 mb-2" />
+                <div className="h-3 w-4/5 rounded bg-gray-200" />
+              </div>
+            ))}
+            <p className="text-center text-sm text-gray-500">Menganalisis gejala…</p>
+          </div>
+        )}
 
-              return (
-                <li key={`${result.conditionId}-${index}`}>
-                  <ClayCard>
-                    <div className="p-5 space-y-4">
-                      {/* Condition header */}
-                      <div className="flex items-start justify-between gap-4">
-                        <h2 className="text-lg font-semibold text-gray-800">
-                          {result.conditionName}
-                        </h2>
-                        {/* Confidence badge */}
-                        <span
-                          className="shrink-0 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
-                          aria-label={`Tingkat keyakinan ${percentScore} persen`}
-                        >
-                          {percentScore}% yakin
-                        </span>
-                      </div>
-
-                      {/* Description */}
-                      {meta?.description && (
-                        <p className="text-gray-600 text-sm leading-relaxed">
-                          {meta.description}
-                        </p>
-                      )}
-
-                      {/* Recommended action */}
-                      {meta?.recommendedAction && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                          <p className="text-sm font-medium text-green-800 mb-1">
-                            Rekomendasi Tindakan
-                          </p>
-                          <p className="text-sm text-green-700">
-                            {meta.recommendedAction}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* "Detail Teknis & Log Inferensi" accordion — Requirement 5.4 */}
-                      <details className="group">
-                        <summary className="cursor-pointer select-none text-sm font-medium text-primary-700 hover:text-primary-800 list-none flex items-center gap-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">
-                          <span
-                            className="inline-block transition-transform group-open:rotate-90"
-                            aria-hidden="true"
-                          >
-                            ▶
-                          </span>
-                          Detail Teknis &amp; Log Inferensi
-                        </summary>
-
-                        <div className="mt-3 pl-4 border-l-2 border-blue-100 space-y-2">
-                          {result.inferenceLog.length > 0 ? (
-                            <ul className="space-y-1 list-none p-0">
-                              {result.inferenceLog.map((entry, logIndex) => (
-                                <li key={logIndex}>
-                                  <p className="text-xs font-mono text-gray-600 whitespace-pre-wrap break-words">
-                                    {entry}
-                                  </p>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="text-xs text-gray-600 italic">
-                              Tidak ada log tersedia.
-                            </p>
-                          )}
-                        </div>
-                      </details>
-                    </div>
-                  </ClayCard>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          /* Fallback: no diagnosis found — Requirements 5.2 */
+        {/* ── Error ─────────────────────────────────────────────────────── */}
+        {loadState === 'error' && (
           <ClayCard>
             <div className="p-8 text-center space-y-3">
-              <p className="text-4xl" aria-hidden="true">🔍</p>
-              <h2 className="text-lg font-semibold text-gray-700">
-                Tidak ada diagnosis ditemukan
-              </h2>
+              <p className="text-4xl" aria-hidden="true">⚠️</p>
+              <h2 className="text-lg font-semibold text-gray-700">Gagal menjalankan diagnosis</h2>
               <p className="text-sm text-gray-600 leading-relaxed">
-                Gejala yang Anda pilih tidak cukup cocok dengan kondisi yang diketahui.
-                Coba pilih lebih banyak gejala atau konsultasikan dengan teknisi.
+                {diagnosisError ?? 'Terjadi kesalahan saat menganalisis gejala. Silakan coba lagi.'}
               </p>
             </div>
           </ClayCard>
         )}
 
-        {/* "Diagnose Again" button — Requirement 5.6 */}
+        {/* ── Results ───────────────────────────────────────────────────── */}
+        {loadState === 'ready' && (
+          <>
+            {/* Ringkasan input pengguna */}
+            <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 text-sm text-gray-600 space-y-1">
+              {selectedDeviceCategory && (
+                <p><span className="font-medium text-gray-700">Perangkat:</span> {selectedDeviceCategory}</p>
+              )}
+              <div>
+                <span className="font-medium text-gray-700">Gejala dipilih ({activeFacts.length}):</span>
+                {activeFacts.length === 0
+                  ? <span className="italic text-gray-400 ml-1">Tidak ada</span>
+                  : (
+                    <ul className="mt-1 space-y-0.5 list-none p-0">
+                      {activeFacts.map((sid) => {
+                        const s = symptomMap.get(sid);
+                        const label = s
+                          ? `${s.code ?? sid} — ${s.name}`
+                          : sid;
+                        return (
+                          <li key={sid} className="text-gray-600 text-xs ml-2">
+                            • {label}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )
+                }
+              </div>
+            </div>
+
+            {hasResults ? (
+              <ul className="space-y-6 list-none p-0">
+                {results.map((result, index) => (
+                  <li key={`${result.matchedRuleId}-${index}`}>
+                    <ClayCard>
+                      <div className="p-5 space-y-4">
+                        {/* Header: kode kondisi + nama */}
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <span className="font-mono text-xs text-primary-600 font-semibold">
+                              {result.conditionCode || result.conditionId}
+                            </span>
+                            <h2 className="text-lg font-semibold text-gray-800 mt-0.5">
+                              {result.conditionName}
+                            </h2>
+                          </div>
+                          {/* Badge: rule terpenuhi — bukan persentase */}
+                          <span
+                            className="shrink-0 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800"
+                            aria-label="Rule terpenuhi"
+                          >
+                            ✓ Rule Terpenuhi
+                          </span>
+                        </div>
+
+                        {/* Rule yang terpenuhi — format: R01: IF G01 AND G02 THEN K01 */}
+                        <div className="text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 font-mono">
+                          <span className="font-semibold text-gray-700">
+                            {result.matchedRuleCode || result.matchedRuleId}
+                          </span>
+                          {': IF '}
+                          {(result.matchedSymptomCodes.length > 0
+                            ? result.matchedSymptomCodes
+                            : result.matchedSymptomIds
+                          ).join(' AND ')}
+                          {' THEN '}
+                          {result.conditionCode || result.conditionId}
+                        </div>
+
+                        {/* Deskripsi kondisi */}
+                        {result.description && (
+                          <p className="text-gray-600 text-sm leading-relaxed">
+                            {result.description}
+                          </p>
+                        )}
+
+                        {/* Solusi awal */}
+                        {result.recommendedAction && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                            <p className="text-sm font-medium text-green-800 mb-1">
+                              Solusi Awal
+                            </p>
+                            <p className="text-sm text-green-700 leading-relaxed">
+                              {result.recommendedAction}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Accordion: Detail Teknis & Log Inferensi */}
+                        <details className="group">
+                          <summary className="cursor-pointer select-none text-sm font-medium text-primary-700 hover:text-primary-800 list-none flex items-center gap-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">
+                            <span className="inline-block transition-transform group-open:rotate-90" aria-hidden="true">▶</span>
+                            Detail Teknis &amp; Log Inferensi
+                          </summary>
+                          <div className="mt-3 pl-4 border-l-2 border-blue-100 space-y-2">
+                            {result.inferenceLog.length > 0 ? (
+                              <ul className="space-y-1 list-none p-0">
+                                {result.inferenceLog.map((entry, logIndex) => (
+                                  <li key={logIndex}>
+                                    <p className="text-xs font-mono text-gray-600 whitespace-pre-wrap break-words">
+                                      {entry}
+                                    </p>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-xs text-gray-600 italic">Tidak ada log tersedia.</p>
+                            )}
+                          </div>
+                        </details>
+                      </div>
+                    </ClayCard>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              /* Tidak ada rule yang terpenuhi */
+              <ClayCard>
+                <div className="p-8 text-center space-y-3">
+                  <p className="text-4xl" aria-hidden="true">🔍</p>
+                  <h2 className="text-lg font-semibold text-gray-700">
+                    Belum ada diagnosa yang sesuai
+                  </h2>
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Gejala yang dipilih belum cukup untuk menghasilkan diagnosa.
+                    Silakan pilih gejala lain atau lakukan pemeriksaan langsung ke teknisi.
+                  </p>
+                </div>
+              </ClayCard>
+            )}
+
+            {/* Disclaimer */}
+            <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+              <p className="text-xs text-amber-800 leading-relaxed">
+                <span className="font-semibold">⚠ Catatan Penting:</span>{' '}
+                Hasil ini merupakan diagnosa awal dan tidak menggantikan pemeriksaan teknisi.
+                Konsultasikan dengan teknisi berpengalaman untuk penanganan lebih lanjut.
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* Tombol Diagnosa Lagi */}
         <div className="flex justify-center pt-2">
           <button
             type="button"

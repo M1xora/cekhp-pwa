@@ -2,14 +2,17 @@ import { useState } from 'react';
 import ClayCard from '../../components/ui/ClayCard';
 import { useDiagnosaStore } from '../../store/useDiagnosaStore';
 
-// Symptom category options — 6 hardware/software areas (Req 3.1)
+// Symptom category options — sesuai kategori data knowledge base final
 const SYMPTOM_CATEGORIES = [
-  { id: 'Battery',      name: 'Baterai',      icon: '🔋' },
-  { id: 'Screen',       name: 'Layar',        icon: '📺' },
-  { id: 'Performance',  name: 'Performa',     icon: '⚡' },
-  { id: 'Camera',       name: 'Kamera',       icon: '📷' },
-  { id: 'Connectivity', name: 'Konektivitas', icon: '📶' },
-  { id: 'Audio',        name: 'Audio',        icon: '🔊' },
+  { id: 'Baterai',          name: 'Baterai',          icon: '🔋' },
+  { id: 'Pengisian Daya',   name: 'Pengisian Daya',   icon: '⚡' },
+  { id: 'Layar',            name: 'Layar',            icon: '📺' },
+  { id: 'Sistem',           name: 'Sistem',           icon: '⚙️' },
+  { id: 'Audio',            name: 'Audio',            icon: '🔊' },
+  { id: 'Kamera',           name: 'Kamera',           icon: '📷' },
+  { id: 'Jaringan',         name: 'Jaringan',         icon: '📶' },
+  { id: 'Daya',             name: 'Daya',             icon: '🔌' },
+  { id: 'Kerusakan Fisik',  name: 'Kerusakan Fisik',  icon: '💧' },
 ] as const;
 
 interface Step2Props {
@@ -71,7 +74,7 @@ export default function Step2SymptomCategory({ onNext, onBack }: Step2Props) {
         </p>
       </div>
 
-      {/* Symptom category grid — 6 cards */}
+      {/* Symptom category grid — 9 cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         {SYMPTOM_CATEGORIES.map((category) => {
           const isSelected = selectedSymptomCategory === category.id;

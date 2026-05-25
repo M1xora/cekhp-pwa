@@ -57,16 +57,14 @@ export default function AdminLayout() {
             <NavLink
               to="/admin"
               end
-              className={({ isActive }) =>
-                `px-3 py-2 min-h-[44px] flex items-center rounded-lg text-xs font-medium transition-colors`
-              }
+              className="px-3 py-2 min-h-[44px] flex items-center rounded-lg text-xs font-medium transition-colors"
               style={({ isActive }) =>
                 isActive
                   ? { background: 'var(--clay-purple)', color: '#fff', fontFamily: 'var(--font-body)' }
                   : { color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-body)' }
               }
             >
-              Dash
+              Dasbor
             </NavLink>
             <NavLink
               to="/admin/symptoms"
@@ -88,13 +86,13 @@ export default function AdminLayout() {
                   : { color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-body)' }
               }
             >
-              Kondisi
+              Kerusakan
             </NavLink>
             <button
               onClick={handleLogout}
               className="px-3 py-2 min-h-[44px] rounded-lg text-xs font-medium transition-colors"
               style={{ color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-body)', background: 'transparent', border: 'none', cursor: 'pointer' }}
-              aria-label="Logout"
+              aria-label="Keluar"
             >
               Keluar
             </button>

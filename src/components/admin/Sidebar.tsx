@@ -9,10 +9,10 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard',  to: '/admin',            end: true, icon: '📊' },
-  { label: 'Symptoms',   to: '/admin/symptoms',             icon: '🩺' },
-  { label: 'Conditions', to: '/admin/conditions',            icon: '📋' },
-  { label: 'Rules',      to: '/admin/rules',                 icon: '⚡' },
+  { label: 'Dashboard',        to: '/admin',            end: true, icon: '📊' },
+  { label: 'Gejala',           to: '/admin/symptoms',             icon: '🩺' },
+  { label: 'Jenis Kerusakan',  to: '/admin/conditions',            icon: '📋' },
+  { label: 'Rule Diagnosa',    to: '/admin/rules',                 icon: '⚡' },
 ];
 
 /**
@@ -88,7 +88,7 @@ export default function Sidebar() {
           style={{ color: 'rgba(255,255,255,0.7)', fontFamily: 'var(--font-body)', background: 'transparent', border: 'none' }}
           onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#fff'; (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)'; }}
           onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.7)'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-          aria-label="Logout"
+          aria-label="Keluar"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -101,7 +101,7 @@ export default function Sidebar() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
           </svg>
-          Logout
+          Keluar
         </button>
       </div>
     </aside>

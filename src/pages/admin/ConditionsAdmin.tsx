@@ -11,6 +11,7 @@ import { DataTable, ColumnDef } from '../../components/admin/DataTable';
  */
 interface ConditionRow {
   id: string;
+  code: string;
   name: string;
   description: string;
   recommendedAction: string;
@@ -22,6 +23,7 @@ const MAX_LEN = 255;
 
 interface FormErrors {
   id?: string;
+  code?: string;
   name?: string;
   description?: string;
   recommendedAction?: string;
@@ -31,27 +33,35 @@ function validateForm(form: ConditionRow): FormErrors {
   const errors: FormErrors = {};
 
   if (!form.id.trim()) {
-    errors.id = 'ID is required.';
+    errors.id = 'ID tidak boleh kosong.';
   } else if (form.id.length > MAX_LEN) {
-    errors.id = `ID must not exceed ${MAX_LEN} characters.`;
+    errors.id = `ID maksimal ${MAX_LEN} karakter.`;
+  }
+
+  if (!form.code.trim()) {
+    errors.code = 'Kode kerusakan wajib diisi.';
+  } else if (!/^K\d+$/.test(form.code.trim())) {
+    errors.code = 'Format kode harus K01, K02, dst.';
+  } else if (form.code.length > 10) {
+    errors.code = 'Kode maksimal 10 karakter.';
   }
 
   if (!form.name.trim()) {
-    errors.name = 'Name is required.';
+    errors.name = 'Nama tidak boleh kosong.';
   } else if (form.name.length > MAX_LEN) {
-    errors.name = `Name must not exceed ${MAX_LEN} characters.`;
+    errors.name = `Nama maksimal ${MAX_LEN} karakter.`;
   }
 
   if (!form.description.trim()) {
-    errors.description = 'Description is required.';
+    errors.description = 'Deskripsi tidak boleh kosong.';
   } else if (form.description.length > MAX_LEN) {
-    errors.description = `Description must not exceed ${MAX_LEN} characters.`;
+    errors.description = `Deskripsi maksimal ${MAX_LEN} karakter.`;
   }
 
   if (!form.recommendedAction.trim()) {
-    errors.recommendedAction = 'Recommended Action is required.';
+    errors.recommendedAction = 'Solusi awal tidak boleh kosong.';
   } else if (form.recommendedAction.length > MAX_LEN) {
-    errors.recommendedAction = `Recommended Action must not exceed ${MAX_LEN} characters.`;
+    errors.recommendedAction = `Solusi awal maksimal ${MAX_LEN} karakter.`;
   }
 
   return errors;
@@ -73,6 +83,7 @@ interface ToastMessage {
 
 const EMPTY_FORM: ConditionRow = {
   id: '',
+  code: '',
   name: '',
   description: '',
   recommendedAction: '',
@@ -136,11 +147,11 @@ export default function ConditionsAdmin() {
     setIsLoading(true);
     const { data, error } = await supabase
       .from('conditions')
-      .select('id, name, description, recommended_action')
+      .select('id, code, name, description, recommended_action')
       .order('id', { ascending: true });
 
     if (error) {
-      showToast('error', `Failed to fetch conditions: ${error.message}`);
+      showToast('error', `Gagal memuat data: ${error.message}`);
       setIsLoading(false);
       return;
     }
@@ -148,6 +159,7 @@ export default function ConditionsAdmin() {
     // Map snake_case DB column to camelCase TS field
     const mapped: ConditionRow[] = (data ?? []).map((row) => ({
       id: row.id as string,
+      code: (row.code as string) ?? '',
       name: row.name as string,
       description: row.description as string,
       recommendedAction: row.recommended_action as string,
@@ -177,7 +189,6 @@ export default function ConditionsAdmin() {
     setFormErrors({});
     setIsModalOpen(true);
   };
-
   const closeModal = () => {
     setIsModalOpen(false);
     setFormErrors({});
@@ -199,6 +210,7 @@ export default function ConditionsAdmin() {
 
     const payload = {
       id: form.id.trim(),
+      code: form.code.trim().toUpperCase(),
       name: form.name.trim(),
       description: form.description.trim(),
       recommended_action: form.recommendedAction.trim(),
@@ -209,6 +221,7 @@ export default function ConditionsAdmin() {
       const { error } = await supabase
         .from('conditions')
         .update({
+          code: payload.code,
           name: payload.name,
           description: payload.description,
           recommended_action: payload.recommended_action,
@@ -216,7 +229,7 @@ export default function ConditionsAdmin() {
         .eq('id', payload.id);
 
       if (error) {
-        showToast('error', `Failed to update condition: ${error.message}`);
+        showToast('error', `Gagal memperbarui: ${error.message}`);
         setIsSubmitting(false);
         return;
       }
@@ -227,6 +240,7 @@ export default function ConditionsAdmin() {
           c.id === payload.id
             ? {
                 id: payload.id,
+                code: payload.code,
                 name: payload.name,
                 description: payload.description,
                 recommendedAction: payload.recommended_action,
@@ -239,7 +253,7 @@ export default function ConditionsAdmin() {
       const { error } = await supabase.from('conditions').insert([payload]);
 
       if (error) {
-        showToast('error', `Failed to create condition: ${error.message}`);
+        showToast('error', `Gagal menambah: ${error.message}`);
         setIsSubmitting(false);
         return;
       }
@@ -249,6 +263,7 @@ export default function ConditionsAdmin() {
         ...prev,
         {
           id: payload.id,
+          code: payload.code,
           name: payload.name,
           description: payload.description,
           recommendedAction: payload.recommended_action,
@@ -272,7 +287,7 @@ export default function ConditionsAdmin() {
       .eq('id', deleteTargetId);
 
     if (error) {
-      showToast('error', `Failed to delete condition: ${error.message}`);
+      showToast('error', `Gagal menghapus: ${error.message}`);
       setIsDeleting(false);
       setDeleteTargetId(null);
       return;
@@ -287,40 +302,47 @@ export default function ConditionsAdmin() {
   // ── Column definitions ───────────────────────────────────────────────────────
 
   const columns: ColumnDef<ConditionRow>[] = [
+    {
+      key: 'code',
+      header: 'Kode',
+      render: (row) => (
+        <span className="font-mono font-semibold text-primary-700 text-xs">{row.code || '—'}</span>
+      ),
+    },
     { key: 'id', header: 'ID' },
-    { key: 'name', header: 'Name' },
+    { key: 'name', header: 'Nama' },
     {
       key: 'description',
-      header: 'Description',
+      header: 'Deskripsi',
       render: (row) => (
         <span className="line-clamp-2 max-w-xs block">{row.description}</span>
       ),
     },
     {
       key: 'recommendedAction',
-      header: 'Recommended Action',
+      header: 'Solusi Awal',
       render: (row) => (
         <span className="line-clamp-2 max-w-xs block">{row.recommendedAction}</span>
       ),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      header: 'Aksi',
       render: (row) => (
         <div className="flex gap-2">
           <button
             onClick={() => openEditModal(row)}
             className="px-3 py-1 text-xs font-medium text-primary-700 bg-primary-100 rounded-clay-sm hover:bg-primary-200 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500"
-            aria-label={`Edit condition ${row.name}`}
+            aria-label={`Ubah jenis kerusakan ${row.name}`}
           >
-            Edit
+            Ubah
           </button>
           <button
             onClick={() => setDeleteTargetId(row.id)}
             className="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-clay-sm hover:bg-red-200 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500"
-            aria-label={`Delete condition ${row.name}`}
+            aria-label={`Hapus jenis kerusakan ${row.name}`}
           >
-            Delete
+            Hapus
           </button>
         </div>
       ),
@@ -363,18 +385,18 @@ export default function ConditionsAdmin() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 font-display">
-            Conditions
+            Jenis Kerusakan
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Manage diagnostic conditions and recommended actions.
+            Kelola jenis kerusakan dan solusi awal yang direkomendasikan.
           </p>
         </div>
         <button
           onClick={openCreateModal}
           className="clay-btn-primary px-5 py-2.5 text-sm font-semibold rounded-clay-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500"
-          aria-label="Create new condition"
+          aria-label="Tambah jenis kerusakan baru"
         >
-          + Create Condition
+          + Tambah Kerusakan
         </button>
       </div>
 
@@ -407,7 +429,7 @@ export default function ConditionsAdmin() {
               id="modal-title"
               className="text-xl font-bold text-gray-800 font-display mb-5"
             >
-              {isEditMode ? 'Edit Condition' : 'Create Condition'}
+              {isEditMode ? 'Ubah Jenis Kerusakan' : 'Tambah Jenis Kerusakan'}
             </h2>
 
             <form onSubmit={handleSubmit} noValidate>
@@ -435,7 +457,7 @@ export default function ConditionsAdmin() {
                   className={`w-full rounded-clay-sm border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 transition ${
                     formErrors.id ? 'border-red-400' : 'border-gray-300'
                   } ${isEditMode ? 'bg-gray-100 cursor-not-allowed text-gray-600' : ''}`}
-                  placeholder="e.g. battery-degradation"
+                  placeholder="contoh: battery-degradation"
                 />
                 {formErrors.id && (
                   <p
@@ -448,13 +470,49 @@ export default function ConditionsAdmin() {
                 )}
               </div>
 
+              {/* Kode Kerusakan field */}
+              <div className="mb-4">
+                <label
+                  htmlFor="condition-code"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Kode Kerusakan <span className="text-red-500" aria-hidden="true">*</span>
+                </label>
+                <input
+                  id="condition-code"
+                  type="text"
+                  value={form.code}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, code: e.target.value }));
+                    setFormErrors((err) => ({ ...err, code: undefined }));
+                  }}
+                  maxLength={10}
+                  aria-required="true"
+                  aria-invalid={!!formErrors.code}
+                  aria-describedby={formErrors.code ? 'condition-code-error' : 'condition-code-hint'}
+                  className={`w-full rounded-clay-sm border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 transition bg-white font-mono ${
+                    formErrors.code ? 'border-red-400' : 'border-gray-300'
+                  }`}
+                  placeholder="contoh: K01"
+                />
+                {formErrors.code ? (
+                  <p id="condition-code-error" role="alert" className="mt-1 text-xs text-red-600">
+                    {formErrors.code}
+                  </p>
+                ) : (
+                  <p id="condition-code-hint" className="mt-1 text-xs text-gray-500">
+                    Kode akademik unik untuk jenis kerusakan ini. Format: K01, K02, dst.
+                  </p>
+                )}
+              </div>
+
               {/* Name field */}
               <div className="mb-4">
                 <label
                   htmlFor="condition-name"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Name <span className="text-red-500" aria-hidden="true">*</span>
+                  Nama <span className="text-red-500" aria-hidden="true">*</span>
                 </label>
                 <input
                   id="condition-name"
@@ -471,7 +529,7 @@ export default function ConditionsAdmin() {
                   className={`w-full rounded-clay-sm border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 transition ${
                     formErrors.name ? 'border-red-400' : 'border-gray-300'
                   }`}
-                  placeholder="e.g. Battery Degradation"
+                  placeholder="contoh: Kerusakan Baterai"
                 />
                 {formErrors.name && (
                   <p
@@ -490,7 +548,7 @@ export default function ConditionsAdmin() {
                   htmlFor="condition-description"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Description <span className="text-red-500" aria-hidden="true">*</span>
+                  Deskripsi <span className="text-red-500" aria-hidden="true">*</span>
                 </label>
                 <textarea
                   id="condition-description"
@@ -509,7 +567,7 @@ export default function ConditionsAdmin() {
                   className={`w-full rounded-clay-sm border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 transition resize-none ${
                     formErrors.description ? 'border-red-400' : 'border-gray-300'
                   }`}
-                  placeholder="Brief explanation of the condition…"
+                  placeholder="Penjelasan singkat tentang jenis kerusakan ini…"
                 />
                 {formErrors.description && (
                   <p
@@ -528,7 +586,7 @@ export default function ConditionsAdmin() {
                   htmlFor="condition-recommended-action"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
-                  Recommended Action{' '}
+                  Solusi Awal{' '}
                   <span className="text-red-500" aria-hidden="true">*</span>
                 </label>
                 <textarea
@@ -553,7 +611,7 @@ export default function ConditionsAdmin() {
                   className={`w-full rounded-clay-sm border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 transition resize-none ${
                     formErrors.recommendedAction ? 'border-red-400' : 'border-gray-300'
                   }`}
-                  placeholder="e.g. Replace the battery at an authorized service center."
+                  placeholder="contoh: Ganti baterai di pusat servis resmi."
                 />
                 {formErrors.recommendedAction && (
                   <p
@@ -574,7 +632,7 @@ export default function ConditionsAdmin() {
                   disabled={isSubmitting}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-clay-sm hover:bg-gray-200 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-500 disabled:opacity-40"
                 >
-                  Cancel
+                  Batal
                 </button>
                 <button
                   type="submit"
@@ -584,11 +642,11 @@ export default function ConditionsAdmin() {
                 >
                   {isSubmitting
                     ? isEditMode
-                      ? 'Saving…'
-                      : 'Creating…'
+                      ? 'Menyimpan…'
+                      : 'Menambah…'
                     : isEditMode
-                    ? 'Save Changes'
-                    : 'Create'}
+                    ? 'Simpan Perubahan'
+                    : 'Tambah'}
                 </button>
               </div>
             </form>
@@ -618,17 +676,17 @@ export default function ConditionsAdmin() {
               id="delete-dialog-title"
               className="text-lg font-bold text-gray-800 font-display mb-2"
             >
-              Delete Condition
+              Hapus Jenis Kerusakan
             </h2>
             <p
               id="delete-dialog-description"
               className="text-sm text-gray-600 mb-6"
             >
-              Are you sure you want to delete{' '}
+              Yakin ingin menghapus{' '}
               <span className="font-semibold text-gray-800">
                 &ldquo;{deleteTargetId}&rdquo;
               </span>
-              ? This action cannot be undone.
+              ? Tindakan ini tidak dapat dibatalkan.
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -636,7 +694,7 @@ export default function ConditionsAdmin() {
                 disabled={isDeleting}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-clay-sm hover:bg-gray-200 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-500 disabled:opacity-40"
               >
-                Cancel
+                Batal
               </button>
               <button
                 onClick={handleDeleteConfirm}
@@ -644,7 +702,7 @@ export default function ConditionsAdmin() {
                 className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-clay-sm hover:bg-red-700 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500 disabled:opacity-40"
                 aria-disabled={isDeleting}
               >
-                {isDeleting ? 'Deleting…' : 'Delete'}
+                {isDeleting ? 'Menghapus…' : 'Hapus'}
               </button>
             </div>
           </div>

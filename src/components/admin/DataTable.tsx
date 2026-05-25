@@ -68,7 +68,7 @@ export function DataTable<T extends object>({
         className="w-full overflow-x-auto rounded-xl border"
         style={{ borderColor: 'rgba(45,27,105,0.10)' }}
         aria-busy="true"
-        aria-label="Loading table data"
+        aria-label="Memuat data tabel"
       >
         {/* Skeleton header */}
         <div
@@ -128,7 +128,7 @@ export function DataTable<T extends object>({
                 className="px-4 py-12 text-center italic"
                 style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}
               >
-                No data found
+                Belum ada data
               </td>
             </tr>
           </tbody>
@@ -194,16 +194,16 @@ export function DataTable<T extends object>({
       <div
         className="mt-4 flex items-center justify-between text-sm"
         style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-body)' }}
-        aria-label="Table pagination"
+        aria-label="Navigasi halaman tabel"
       >
         {/* Page info */}
         <span className="tabular-nums">
-          Page{' '}
+          Halaman{' '}
           <span className="font-bold" style={{ color: 'var(--text-dark)' }}>{safePage}</span>
-          {' '}of{' '}
+          {' '}dari{' '}
           <span className="font-bold" style={{ color: 'var(--text-dark)' }}>{totalPages}</span>
           {' '}
-          <span>({data.length} {data.length === 1 ? 'record' : 'records'})</span>
+          <span>({data.length} {data.length === 1 ? 'data' : 'data'})</span>
         </span>
 
         {/* Flat Previous / Next buttons */}
@@ -218,9 +218,9 @@ export function DataTable<T extends object>({
               color: 'var(--text-dark)',
               fontFamily: 'var(--font-body)',
             }}
-            aria-label="Previous page"
+            aria-label="Halaman sebelumnya"
           >
-            ← Previous
+            ← Sebelumnya
           </button>
           <button
             onClick={handleNext}
@@ -232,9 +232,9 @@ export function DataTable<T extends object>({
               color: 'var(--text-dark)',
               fontFamily: 'var(--font-body)',
             }}
-            aria-label="Next page"
+            aria-label="Halaman berikutnya"
           >
-            Next →
+            Berikutnya →
           </button>
         </div>
       </div>

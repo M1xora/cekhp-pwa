@@ -92,10 +92,17 @@ describe('useDiagnosaStore — resetStore', () => {
     store.toggleFact('battery-drain-fast');
     store.setResults([
       {
-        conditionId: 'battery-degradation',
-        conditionName: 'Battery Degradation',
-        confidenceScore: 0.75,
-        inferenceLog: ['Checked rule-battery-01: matched 3/4 symptoms → score 0.75'],
+        conditionId: 'condition-battery-damage',
+        conditionCode: 'K01',
+        conditionName: 'Kerusakan Baterai',
+        description: 'Kerusakan baterai',
+        recommendedAction: 'Ganti baterai.',
+        matchedRuleId: 'rule-r01-battery',
+        matchedRuleCode: 'R01',
+        matchedSymptomIds: ['symptom-battery-drain', 'symptom-device-hot'],
+        matchedSymptomCodes: ['G01', 'G02'],
+        inferenceLog: ['Rule rule-r01-battery (R01): semua 2 gejala terpenuhi → COCOK'],
+        confidenceScore: 1.0,
       },
     ]);
 

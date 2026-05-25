@@ -7,6 +7,7 @@ import { Symptom } from '../../types/knowledge-base';
 
 interface FormValues {
   id: string;
+  code: string;
   name: string;
   description: string;
   category: string;
@@ -14,6 +15,7 @@ interface FormValues {
 
 interface FormErrors {
   id?: string;
+  code?: string;
   name?: string;
   description?: string;
   category?: string;
@@ -29,33 +31,41 @@ function validateForm(values: FormValues): FormErrors {
   const errors: FormErrors = {};
 
   if (!values.id.trim()) {
-    errors.id = 'ID is required.';
+    errors.id = 'ID tidak boleh kosong.';
   } else if (values.id.length > MAX_LEN) {
-    errors.id = `ID must be ≤ ${MAX_LEN} characters.`;
+    errors.id = `ID maksimal ${MAX_LEN} karakter.`;
+  }
+
+  if (!values.code.trim()) {
+    errors.code = 'Kode gejala wajib diisi.';
+  } else if (!/^G\d+$/.test(values.code.trim())) {
+    errors.code = 'Format kode harus G01, G02, dst.';
+  } else if (values.code.length > 10) {
+    errors.code = 'Kode maksimal 10 karakter.';
   }
 
   if (!values.name.trim()) {
-    errors.name = 'Name is required.';
+    errors.name = 'Nama tidak boleh kosong.';
   } else if (values.name.length > MAX_LEN) {
-    errors.name = `Name must be ≤ ${MAX_LEN} characters.`;
+    errors.name = `Nama maksimal ${MAX_LEN} karakter.`;
   }
 
   if (!values.description.trim()) {
-    errors.description = 'Description is required.';
+    errors.description = 'Deskripsi tidak boleh kosong.';
   } else if (values.description.length > MAX_LEN) {
-    errors.description = `Description must be ≤ ${MAX_LEN} characters.`;
+    errors.description = `Deskripsi maksimal ${MAX_LEN} karakter.`;
   }
 
   if (!values.category.trim()) {
-    errors.category = 'Category is required.';
+    errors.category = 'Kategori tidak boleh kosong.';
   } else if (values.category.length > MAX_LEN) {
-    errors.category = `Category must be ≤ ${MAX_LEN} characters.`;
+    errors.category = `Kategori maksimal ${MAX_LEN} karakter.`;
   }
 
   return errors;
 }
 
-const EMPTY_FORM: FormValues = { id: '', name: '', description: '', category: '' };
+const EMPTY_FORM: FormValues = { id: '', code: '', name: '', description: '', category: '' };
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 
@@ -117,25 +127,25 @@ function ConfirmDialog({ symptomName, onConfirm, onCancel }: ConfirmDialogProps)
     >
       <div className="bg-white rounded-clay shadow-clay-lg p-6 w-full max-w-sm mx-4 animate-spring-in">
         <h2 id="confirm-dialog-title" className="text-lg font-semibold text-gray-800 mb-2">
-          Delete Symptom
+          Hapus Gejala
         </h2>
         <p className="text-sm text-gray-600 mb-6">
-          Are you sure you want to delete{' '}
+          Yakin ingin menghapus gejala{' '}
           <span className="font-medium text-gray-800">"{symptomName}"</span>?
-          This action cannot be undone.
+          Tindakan ini tidak dapat dibatalkan.
         </p>
         <div className="flex justify-end gap-3">
           <button
             onClick={onCancel}
             className="px-4 py-2 text-sm rounded-clay-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500"
           >
-            Cancel
+            Batal
           </button>
           <button
             onClick={onConfirm}
             className="px-4 py-2 text-sm rounded-clay-sm bg-red-600 text-white hover:bg-red-700 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500"
           >
-            Delete
+            Hapus
           </button>
         </div>
       </div>
@@ -188,7 +198,7 @@ function SymptomFormModal({
     onSubmit(values);
   }
 
-  const title = mode === 'create' ? 'Create Symptom' : 'Edit Symptom';
+  const title = mode === 'create' ? 'Tambah Gejala' : 'Ubah Gejala';
 
   return (
     <div
@@ -206,7 +216,7 @@ function SymptomFormModal({
           <button
             onClick={onClose}
             className="text-gray-600 hover:text-gray-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-600 rounded"
-            aria-label="Close dialog"
+            aria-label="Tutup dialog"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -235,7 +245,7 @@ function SymptomFormModal({
               className={`w-full px-3 py-2 text-sm border rounded-clay-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition ${
                 mode === 'edit' ? 'bg-gray-100 text-gray-600 cursor-not-allowed' : 'bg-white'
               } ${errors.id ? 'border-red-400' : 'border-gray-200'}`}
-              placeholder="e.g. battery-drain-fast"
+              placeholder="contoh: battery-drain-fast"
             />
             {errors.id && (
               <p id="symptom-id-error" role="alert" className="mt-1 text-xs text-red-600">
@@ -244,10 +254,41 @@ function SymptomFormModal({
             )}
           </div>
 
+          {/* Kode Gejala */}
+          <div className="mb-4">
+            <label htmlFor="symptom-code" className="block text-sm font-medium text-gray-700 mb-1">
+              Kode Gejala <span aria-hidden="true" className="text-red-500">*</span>
+            </label>
+            <input
+              id="symptom-code"
+              name="code"
+              type="text"
+              value={values.code}
+              onChange={handleChange}
+              maxLength={10}
+              aria-required="true"
+              aria-invalid={!!errors.code}
+              aria-describedby={errors.code ? 'symptom-code-error' : 'symptom-code-hint'}
+              className={`w-full px-3 py-2 text-sm border rounded-clay-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition bg-white font-mono ${
+                errors.code ? 'border-red-400' : 'border-gray-200'
+              }`}
+              placeholder="contoh: G01"
+            />
+            {errors.code ? (
+              <p id="symptom-code-error" role="alert" className="mt-1 text-xs text-red-600">
+                {errors.code}
+              </p>
+            ) : (
+              <p id="symptom-code-hint" className="mt-1 text-xs text-gray-500">
+                Kode akademik unik untuk gejala ini. Format: G01, G02, dst.
+              </p>
+            )}
+          </div>
+
           {/* Name */}
           <div className="mb-4">
             <label htmlFor="symptom-name" className="block text-sm font-medium text-gray-700 mb-1">
-              Name <span aria-hidden="true" className="text-red-500">*</span>
+              Nama <span aria-hidden="true" className="text-red-500">*</span>
             </label>
             <input
               id="symptom-name"
@@ -262,7 +303,7 @@ function SymptomFormModal({
               className={`w-full px-3 py-2 text-sm border rounded-clay-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition bg-white ${
                 errors.name ? 'border-red-400' : 'border-gray-200'
               }`}
-              placeholder="e.g. Battery drains fast"
+              placeholder="contoh: Baterai cepat habis"
             />
             {errors.name && (
               <p id="symptom-name-error" role="alert" className="mt-1 text-xs text-red-600">
@@ -274,7 +315,7 @@ function SymptomFormModal({
           {/* Description */}
           <div className="mb-4">
             <label htmlFor="symptom-description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description <span aria-hidden="true" className="text-red-500">*</span>
+              Deskripsi <span aria-hidden="true" className="text-red-500">*</span>
             </label>
             <textarea
               id="symptom-description"
@@ -289,7 +330,7 @@ function SymptomFormModal({
               className={`w-full px-3 py-2 text-sm border rounded-clay-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition bg-white resize-none ${
                 errors.description ? 'border-red-400' : 'border-gray-200'
               }`}
-              placeholder="Brief explanation of the symptom"
+              placeholder="Penjelasan singkat tentang gejala ini"
             />
             {errors.description && (
               <p id="symptom-description-error" role="alert" className="mt-1 text-xs text-red-600">
@@ -301,7 +342,7 @@ function SymptomFormModal({
           {/* Category */}
           <div className="mb-6">
             <label htmlFor="symptom-category" className="block text-sm font-medium text-gray-700 mb-1">
-              Category <span aria-hidden="true" className="text-red-500">*</span>
+              Kategori <span aria-hidden="true" className="text-red-500">*</span>
             </label>
             <input
               id="symptom-category"
@@ -316,7 +357,7 @@ function SymptomFormModal({
               className={`w-full px-3 py-2 text-sm border rounded-clay-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition bg-white ${
                 errors.category ? 'border-red-400' : 'border-gray-200'
               }`}
-              placeholder="e.g. Battery, Screen, Performance"
+              placeholder="contoh: Battery, Screen, Performance"
             />
             {errors.category && (
               <p id="symptom-category-error" role="alert" className="mt-1 text-xs text-red-600">
@@ -333,14 +374,14 @@ function SymptomFormModal({
               disabled={isSubmitting}
               className="px-4 py-2 text-sm rounded-clay-sm border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500"
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="px-4 py-2 text-sm rounded-clay-sm bg-primary-600 text-white hover:bg-primary-700 transition-colors disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500"
             >
-              {isSubmitting ? 'Saving…' : mode === 'create' ? 'Create' : 'Save Changes'}
+              {isSubmitting ? 'Menyimpan…' : mode === 'create' ? 'Tambah' : 'Simpan Perubahan'}
             </button>
           </div>
         </form>
@@ -395,12 +436,12 @@ export default function SymptomsAdmin() {
         const { data, error } = await supabase.from('symptoms').select('*');
         if (cancelled) return;
         if (error) {
-          showToast('Fetch failed: ' + error.message);
+          showToast('Gagal memuat data: ' + error.message);
         } else {
           setSymptoms((data as Symptom[]) ?? []);
         }
       } catch {
-        if (!cancelled) showToast('Fetch failed: unexpected error.');
+        if (!cancelled) showToast('Gagal memuat data: terjadi kesalahan.');
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -439,19 +480,20 @@ export default function SymptomsAdmin() {
     try {
       const record: Symptom = {
         id: values.id.trim(),
+        code: values.code.trim().toUpperCase(),
         name: values.name.trim(),
         description: values.description.trim(),
         category: values.category.trim(),
       };
       const { error } = await supabase.from('symptoms').insert(record);
       if (error) {
-        showToast('Create failed: ' + error.message);
+        showToast('Gagal menambah: ' + error.message);
       } else {
         setSymptoms((prev) => [...prev, record]);
         setModalOpen(false);
       }
     } catch {
-      showToast('Create failed: unexpected error.');
+      showToast('Gagal menambah: terjadi kesalahan.');
     } finally {
       setIsSubmitting(false);
     }
@@ -464,6 +506,7 @@ export default function SymptomsAdmin() {
     setIsSubmitting(true);
     try {
       const updates = {
+        code: values.code.trim().toUpperCase(),
         name: values.name.trim(),
         description: values.description.trim(),
         category: values.category.trim(),
@@ -473,7 +516,7 @@ export default function SymptomsAdmin() {
         .update(updates)
         .eq('id', editingSymptom.id);
       if (error) {
-        showToast('Update failed: ' + error.message);
+        showToast('Gagal memperbarui: ' + error.message);
       } else {
         setSymptoms((prev) =>
           prev.map((s) =>
@@ -484,7 +527,7 @@ export default function SymptomsAdmin() {
         setEditingSymptom(null);
       }
     } catch {
-      showToast('Update failed: unexpected error.');
+      showToast('Gagal memperbarui: terjadi kesalahan.');
     } finally {
       setIsSubmitting(false);
     }
@@ -510,48 +553,55 @@ export default function SymptomsAdmin() {
         .delete()
         .eq('id', target.id);
       if (error) {
-        showToast('Delete failed: ' + error.message);
+        showToast('Gagal menghapus: ' + error.message);
       } else {
         setSymptoms((prev) => prev.filter((s) => s.id !== target.id));
       }
     } catch {
-      showToast('Delete failed: unexpected error.');
+      showToast('Gagal menghapus: terjadi kesalahan.');
     }
   }
 
   // ── Column definitions ─────────────────────────────────────────────────────
 
   const columns: ColumnDef<Symptom>[] = [
+    {
+      key: 'code',
+      header: 'Kode',
+      render: (row) => (
+        <span className="font-mono font-semibold text-primary-700 text-xs">{row.code || '—'}</span>
+      ),
+    },
     { key: 'id', header: 'ID' },
-    { key: 'name', header: 'Name' },
+    { key: 'name', header: 'Nama' },
     {
       key: 'description',
-      header: 'Description',
+      header: 'Deskripsi',
       render: (row) => (
         <span className="block max-w-xs truncate" title={row.description}>
           {row.description}
         </span>
       ),
     },
-    { key: 'category', header: 'Category' },
+    { key: 'category', header: 'Kategori' },
     {
       key: 'actions',
-      header: 'Actions',
+      header: 'Aksi',
       render: (row) => (
         <div className="flex gap-2">
           <button
             onClick={() => openEditModal(row)}
             className="px-3 py-1 text-xs rounded-clay-sm bg-primary-100 text-primary-700 hover:bg-primary-200 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500"
-            aria-label={`Edit symptom ${row.name}`}
+            aria-label={`Ubah gejala ${row.name}`}
           >
-            Edit
+            Ubah
           </button>
           <button
             onClick={() => requestDelete(row)}
             className="px-3 py-1 text-xs rounded-clay-sm bg-red-100 text-red-700 hover:bg-red-200 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500"
-            aria-label={`Delete symptom ${row.name}`}
+            aria-label={`Hapus gejala ${row.name}`}
           >
-            Delete
+            Hapus
           </button>
         </div>
       ),
@@ -564,6 +614,7 @@ export default function SymptomsAdmin() {
     editingSymptom
       ? {
           id: editingSymptom.id,
+          code: editingSymptom.code ?? '',
           name: editingSymptom.name,
           description: editingSymptom.description,
           category: editingSymptom.category,
@@ -577,15 +628,15 @@ export default function SymptomsAdmin() {
       {/* ── Page header ─────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800 font-display">Symptoms</h1>
+          <h1 className="text-3xl font-bold text-gray-800 font-display">Gejala</h1>
           <p className="mt-1 text-sm text-gray-600">
-            Manage symptom entries in the knowledge base.
+            Kelola daftar gejala dalam basis pengetahuan.
           </p>
         </div>
         <button
           onClick={openCreateModal}
           className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-clay-sm hover:bg-primary-700 transition-colors shadow-clay focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500"
-          aria-label="Create new symptom"
+          aria-label="Tambah gejala baru"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -598,7 +649,7 @@ export default function SymptomsAdmin() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          Create Symptom
+          Tambah Gejala
         </button>
       </div>
 

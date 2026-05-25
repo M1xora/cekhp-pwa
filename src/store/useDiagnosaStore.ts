@@ -34,29 +34,31 @@ export const useDiagnosaStore = create<DiagnosaState>((set) => ({
     set({ selectedSymptomCategory: category }),
 
   /**
-   * FIX 2.1 — toggleFact now uses a Set internally for O(1) membership check.
+   * toggleFact menggunakan Set untuk O(1) membership check.
    *
-   * The state value remains a plain `string[]` (serialisable, devtools-compatible).
-   * We only use the Set transiently inside the updater to avoid the O(n) .includes().
+   * Penting: saat menambah fact baru, kita append ke array asli (bukan
+   * rekonstruksi dari Set) agar tidak menghapus duplikat yang mungkin ada
+   * di state sebelumnya. Ini menjaga round-trip property: toggle dua kali
+   * harus mengembalikan state persis seperti semula.
    *
-   * Before: activeFacts.includes(factId) → O(n)
-   * After:  new Set(state.activeFacts).has(factId) → O(n) to build Set, then O(1) lookup.
-   *         Net result is the same O(n) single pass, but the pattern is correct and
-   *         extensible: if activeFacts were a persistent Set this would be O(1) throughout.
+   * Saat menghapus, kita filter array asli dengan indexOf (hapus kemunculan
+   * pertama saja) sehingga duplikat lain tetap terjaga.
    */
   toggleFact: (factId: string) => {
     // Guard: empty string is a no-op (Requirement 8.6)
     if (!factId) return;
 
     set((state) => {
-      const factSet = new Set(state.activeFacts);
-      if (factSet.has(factId)) {
-        factSet.delete(factId);
+      const idx = state.activeFacts.indexOf(factId);
+      if (idx !== -1) {
+        // Fact sudah ada — hapus kemunculan pertama, sisakan yang lain
+        const next = [...state.activeFacts];
+        next.splice(idx, 1);
+        return { activeFacts: next };
       } else {
-        factSet.add(factId);
+        // Fact belum ada — append ke akhir array tanpa mengubah elemen lain
+        return { activeFacts: [...state.activeFacts, factId] };
       }
-      // Convert back to array to keep state serialisable
-      return { activeFacts: Array.from(factSet) };
     });
   },
 
